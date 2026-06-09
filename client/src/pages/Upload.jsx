@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import {
   RiUploadCloud2Line, RiVideoLine, RiFileTextLine,
   RiImageLine, RiCheckLine,
@@ -10,6 +11,7 @@ const topics   = ['Normalization', 'ER Diagrams', 'SQL', 'Transactions', 'Indexi
 const difficulties = ['beginner', 'medium', 'advanced']
 
 export default function Upload() {
+  const navigate = useNavigate()
   const [form, setForm] = useState({
     title: '', description: '', subject: subjects[0],
     topic: topics[0], type: 'video', difficulty: 'medium',
@@ -61,7 +63,7 @@ export default function Upload() {
             <Button variant="secondary" className="flex-1" onClick={() => { setDone(false); setFile(null); setProgress(0) }}>
               Upload More
             </Button>
-            <Button className="flex-1">View Content</Button>
+            <Button className="flex-1" onClick={() => navigate('/dashboard')}>View Content</Button>
           </div>
         </div>
       </div>
