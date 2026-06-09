@@ -6,8 +6,8 @@ import {
 } from 'react-icons/ri'
 import { Button, Input } from '../components/common'
 
-const subjects = ['Database Management', 'Operating Systems', 'Computer Networks', 'Data Structures']
-const topics   = ['Normalization', 'ER Diagrams', 'SQL', 'Transactions', 'Indexing']
+const subjects = ['Database Management', 'Operating Systems', 'Computer Networks', 'Data Structures', 'Other']
+const topics   = ['Normalization', 'ER Diagrams', 'SQL', 'Transactions', 'Indexing', 'Other']
 const difficulties = ['beginner', 'medium', 'advanced']
 
 export default function Upload() {
@@ -17,6 +17,8 @@ export default function Upload() {
     topic: topics[0], type: 'video', difficulty: 'medium',
     tokenCost: 5, tags: '',
   })
+  const [customSubject, setCustomSubject] = useState('')
+  const [customTopic, setCustomTopic] = useState('')
   const [file, setFile] = useState(null)
   const [thumb, setThumb] = useState(null)
   const [progress, setProgress] = useState(0)
@@ -121,12 +123,30 @@ export default function Upload() {
                 <select name="subject" className="input" value={form.subject} onChange={handle}>
                   {subjects.map(s => <option key={s}>{s}</option>)}
                 </select>
+                {form.subject === 'Other' && (
+                  <input
+                    type="text"
+                    placeholder="Enter subject name"
+                    className="input mt-2"
+                    value={customSubject}
+                    onChange={e => setCustomSubject(e.target.value)}
+                  />
+                )}
               </div>
               <div>
                 <label className="input-label">Topic</label>
                 <select name="topic" className="input" value={form.topic} onChange={handle}>
                   {topics.map(t => <option key={t}>{t}</option>)}
                 </select>
+                {form.topic === 'Other' && (
+                  <input
+                    type="text"
+                    placeholder="Enter topic name"
+                    className="input mt-2"
+                    value={customTopic}
+                    onChange={e => setCustomTopic(e.target.value)}
+                  />
+                )}
               </div>
             </div>
             <div className="grid grid-cols-2 gap-4">
