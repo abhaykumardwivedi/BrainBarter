@@ -1,15 +1,17 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import {
   RiShieldLine, RiFlagLine, RiCheckLine,
-  RiDeleteBinLine, RiMedalLine, RiUserLine,
+  RiDeleteBinLine, RiMedalLine, RiUserLine, RiBankLine, RiCloseLine,
 } from 'react-icons/ri'
 import { Badge, Button, Avatar } from '../components/common'
+import { supabase } from '../lib/supabase'
 import toast from 'react-hot-toast'
 
 const tabs = [
-  { id: 'reports',   label: 'Reports'            },
-  { id: 'creators',  label: 'Verify Creators'    },
-  { id: 'content',   label: 'Content Moderation' },
+  { id: 'withdrawals', label: 'Withdrawal Requests' },
+  { id: 'reports',     label: 'Reports'            },
+  { id: 'creators',    label: 'Verify Creators'    },
+  { id: 'content',     label: 'Content Moderation' },
 ]
 
 const mockReports = [
@@ -31,10 +33,77 @@ const mockContent = [
 ]
 
 export default function AdminPanel() {
-  const [activeTab, setActiveTab] = useState('reports')
+  const [activeTab, setActiveTab] = useState('withdrawals')
+  const [withdrawals, setWithdrawals] = useState([])
   const [reports, setReports]     = useState(mockReports)
   const [creators, setCreators]   = useState(mockCreators)
   const [content, setContent]     = useState(mockContent)
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    loadWithdrawals()
+  }, [])
+
+  const loadWithdrawals = async () => {
+    const { data } = await supabase
+      .from('withdrawal_requests')
+      .select(`
+        *,
+        profiles!withdrawal_requests_user_id_fkey(username, email)
+      `)
+      .order('created_at', { ascending: false })
+    setWithdrawals(data || [])
+    setLoading(false)
+  }
+
+  const handleWithdrawal = async (id, action) => {
+    const request = withdrawals.find(w => w.id === id)
+    if (!request) return
+
+    if (action === 'approve') {
+      const txId = prompt('Enter transaction/reference ID:')
+      if (!txId) return
+
+      const { error } = await supabase
+        .from('withdrawal_requests')
+        .update({
+          status: 'approved',
+          transaction_id: txId,
+          admin_note: 'Approved and processed',
+          processed_at: new Date().toISOString(),
+        })
+        .eq('id', id)
+
+      if (!error) {
+        toast.success('Withdrawal approved!')
+        loadWithdrawals()
+      }
+    } else if (action === 'reject') {
+      const reason = prompt('Rejection reason:')
+      if (!reason) return
+
+      // Refund tokens using SQL function
+      await supabase.rpc('refund_tokens', {
+        p_user_id: request.user_id,
+        p_amount: request.tokens_amount,
+        p_reason: `Withdrawal rejected: ${reason}`,
+      })
+
+      const { error } = await supabase
+        .from('withdrawal_requests')
+        .update({
+          status: 'rejected',
+          admin_note: reason,
+          processed_at: new Date().toISOString(),
+        })
+        .eq('id', id)
+
+      if (!error) {
+        toast.success('Withdrawal rejected, tokens refunded')
+        loadWithdrawals()
+      }
+    }
+  }
 
   const resolveReport = (id, action) => {
     setReports(r => r.map(x => x.id === id ? { ...x, status: action } : x))
@@ -76,6 +145,100 @@ export default function AdminPanel() {
             </button>
           ))}
         </div>
+
+        {/* Withdrawal Requests */}
+        {activeTab === 'withdrawals' && (
+          <div className="card space-y-3 animate-fade-in">
+            {loading ? (
+              <div className="space-y-3">
+                {Array.from({ length: 3 }).map((_, i) => <div key={i} className="skeleton h-24 rounded-xl" />)}
+              </div>
+            ) : withdrawals.length === 0 ? (
+              <p className="text-sm text-gray-400 text-center py-8">No withdrawal requests</p>
+            ) : (
+              withdrawals.map(w => (
+                <div key={w.id} className="p-4 rounded-xl bg-gray-50 dark:bg-gray-800/30 space-y-3">
+                  <div className="flex items-start justify-between">
+                    <div>
+                      <p className="text-sm font-medium text-gray-900 dark:text-white">
+                        @{w.profiles?.username || 'Unknown'}
+                      </p>
+                      <p className="text-xs text-gray-500">{w.profiles?.email}</p>
+                    </div>
+                    <Badge variant={w.status === 'pending' ? 'amber' : w.status === 'approved' ? 'green' : 'red'}>
+                      {w.status}
+                    </Badge>
+                  </div>
+                  <div className="grid grid-cols-2 gap-2 text-xs">
+                    <div>
+                      <p className="text-gray-500">Amount</p>
+                      <p className="font-semibold text-gray-900 dark:text-white">
+                        {w.tokens_amount} tokens → ₹{w.inr_amount}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-gray-500">Method</p>
+                      <p className="font-semibold text-gray-900 dark:text-white uppercase">{w.method}</p>
+                    </div>
+                  </div>
+                  {w.method === 'upi' ? (
+                    <div className="text-xs">
+                      <p className="text-gray-500">UPI ID</p>
+                      <p className="font-mono font-semibold text-gray-900 dark:text-white">{w.upi_id}</p>
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-2 gap-2 text-xs">
+                      <div>
+                        <p className="text-gray-500">Bank</p>
+                        <p className="font-semibold text-gray-900 dark:text-white">{w.bank_name}</p>
+                      </div>
+                      <div>
+                        <p className="text-gray-500">Account</p>
+                        <p className="font-mono font-semibold text-gray-900 dark:text-white">{w.account_number}</p>
+                      </div>
+                      <div>
+                        <p className="text-gray-500">IFSC</p>
+                        <p className="font-mono font-semibold text-gray-900 dark:text-white">{w.ifsc_code}</p>
+                      </div>
+                      <div>
+                        <p className="text-gray-500">Holder</p>
+                        <p className="font-semibold text-gray-900 dark:text-white">{w.account_holder}</p>
+                      </div>
+                    </div>
+                  )}
+                  {w.transaction_id && (
+                    <div className="text-xs">
+                      <p className="text-gray-500">Transaction ID</p>
+                      <p className="font-mono text-green-600 dark:text-green-400">{w.transaction_id}</p>
+                    </div>
+                  )}
+                  {w.admin_note && (
+                    <div className="text-xs">
+                      <p className="text-gray-500">Admin Note</p>
+                      <p className="text-gray-700 dark:text-gray-300">{w.admin_note}</p>
+                    </div>
+                  )}
+                  {w.status === 'pending' && (
+                    <div className="flex gap-2 pt-2">
+                      <button
+                        onClick={() => handleWithdrawal(w.id, 'approve')}
+                        className="btn-primary btn-sm flex-1"
+                      >
+                        <RiCheckLine size={14} /> Approve & Process
+                      </button>
+                      <button
+                        onClick={() => handleWithdrawal(w.id, 'reject')}
+                        className="btn-danger btn-sm flex-1"
+                      >
+                        <RiCloseLine size={14} /> Reject & Refund
+                      </button>
+                    </div>
+                  )}
+                </div>
+              ))
+            )}
+          </div>
+        )}
 
         {/* Reports */}
         {activeTab === 'reports' && (
