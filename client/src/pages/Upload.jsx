@@ -5,6 +5,9 @@ import {
   RiImageLine, RiCheckLine,
 } from 'react-icons/ri'
 import { Button, Input } from '../components/common'
+import { supabase } from '../lib/supabase'
+import useAuthStore from '../store/authStore'
+import toast from 'react-hot-toast'
 
 const subjects = ['Database Management', 'Operating Systems', 'Computer Networks', 'Data Structures', 'Other']
 const topics   = ['Normalization', 'ER Diagrams', 'SQL', 'Transactions', 'Indexing', 'Other']
@@ -12,10 +15,10 @@ const difficulties = ['beginner', 'medium', 'advanced']
 
 export default function Upload() {
   const navigate = useNavigate()
+  const { user } = useAuthStore()
   const [form, setForm] = useState({
-    title: '', description: '', subject: subjects[0],
-    topic: topics[0], type: 'video', difficulty: 'medium',
-    tokenCost: 5, tags: '',
+    title: '', description: '', subject: '', topic: '', type: 'video', difficulty: 'medium',
+    tokenCost: 20, tags: '',
   })
   const [customSubject, setCustomSubject] = useState('')
   const [customTopic, setCustomTopic] = useState('')
@@ -41,15 +44,81 @@ export default function Upload() {
 
   const submit = async e => {
     e.preventDefault()
-    if (!file) return
+    if (!file) return toast.error('Please select a file')
+    if (!user) return toast.error('Please login')
+    
     setUploading(true)
-    // Simulate upload progress
-    let p = 0
-    const interval = setInterval(() => {
-      p += 10
-      setProgress(p)
-      if (p >= 100) { clearInterval(interval); setUploading(false); setDone(true) }
-    }, 200)
+    setProgress(0)
+
+    try {
+      // Get final subject and topic values
+      const finalSubject = form.subject === 'Other' ? customSubject : form.subject
+      const finalTopic = form.topic === 'Other' ? customTopic : form.topic
+
+      if (!finalSubject || !finalTopic) {
+        toast.error('Please fill subject and topic')
+        setUploading(false)
+        return
+      }
+
+      // Upload file to Supabase Storage
+      const fileExt = file.name.split('.').pop()
+      const fileName = `${user.id}/${Date.now()}.${fileExt}`
+      
+      setProgress(30)
+      const { data: fileData, error: fileError } = await supabase.storage
+        .from('content')
+        .upload(fileName, file, { cacheControl: '3600', upsert: false })
+
+      if (fileError) throw fileError
+
+      const fileUrl = supabase.storage.from('content').getPublicUrl(fileName).data.publicUrl
+      
+      setProgress(60)
+
+      // Upload thumbnail if exists
+      let thumbnailUrl = null
+      if (thumb) {
+        const thumbExt = thumb.name.split('.').pop()
+        const thumbName = `${user.id}/thumb_${Date.now()}.${thumbExt}`
+        const { data: thumbData } = await supabase.storage
+          .from('content')
+          .upload(thumbName, thumb, { cacheControl: '3600', upsert: false })
+        if (thumbData) {
+          thumbnailUrl = supabase.storage.from('content').getPublicUrl(thumbName).data.publicUrl
+        }
+      }
+
+      setProgress(80)
+
+      // Insert content to database
+      const { error: dbError } = await supabase.from('content').insert({
+        creator_id: user.id,
+        title: form.title,
+        description: form.description,
+        type: form.type,
+        file_url: fileUrl,
+        thumbnail_url: thumbnailUrl,
+        token_cost: parseInt(form.tokenCost),
+        difficulty: form.difficulty,
+        tags: form.tags.split(',').map(t => t.trim()).filter(Boolean),
+        is_published: false,
+        // Store subject and topic as metadata for filtering
+        subject_name: finalSubject,
+        topic_name: finalTopic,
+      })
+
+      if (dbError) throw dbError
+
+      setProgress(100)
+      setDone(true)
+      toast.success('Content uploaded successfully!')
+    } catch (err) {
+      console.error(err)
+      toast.error(err.message || 'Upload failed')
+      setUploading(false)
+      setProgress(0)
+    }
   }
 
   if (done) {

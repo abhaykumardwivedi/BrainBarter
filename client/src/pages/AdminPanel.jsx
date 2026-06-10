@@ -35,13 +35,16 @@ const mockContent = [
 export default function AdminPanel() {
   const [activeTab, setActiveTab] = useState('withdrawals')
   const [withdrawals, setWithdrawals] = useState([])
-  const [reports, setReports]     = useState(mockReports)
-  const [creators, setCreators]   = useState(mockCreators)
-  const [content, setContent]     = useState(mockContent)
+  const [reports, setReports]     = useState([])
+  const [creators, setCreators]   = useState([])
+  const [content, setContent]     = useState([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     loadWithdrawals()
+    loadReports()
+    loadCreators()
+    loadContent()
   }, [])
 
   const loadWithdrawals = async () => {
@@ -54,6 +57,39 @@ export default function AdminPanel() {
       .order('created_at', { ascending: false })
     setWithdrawals(data || [])
     setLoading(false)
+  }
+
+  const loadReports = async () => {
+    const { data } = await supabase
+      .from('reports')
+      .select(`
+        *,
+        content(title),
+        reporter:profiles!reports_user_id_fkey(username)
+      `)
+      .order('created_at', { ascending: false })
+    setReports(data || [])
+  }
+
+  const loadCreators = async () => {
+    const { data } = await supabase
+      .from('profiles')
+      .select('*, content(id)')
+      .order('token_balance', { ascending: false })
+      .limit(20)
+    setCreators((data || []).map(p => ({
+      ...p,
+      uploads: p.content?.length || 0
+    })))
+  }
+
+  const loadContent = async () => {
+    const { data } = await supabase
+      .from('content')
+      .select('*, creator:profiles(username)')
+      .order('created_at', { ascending: false })
+      .limit(50)
+    setContent(data || [])
   }
 
   const handleWithdrawal = async (id, action) => {
@@ -105,20 +141,42 @@ export default function AdminPanel() {
     }
   }
 
-  const resolveReport = (id, action) => {
-    setReports(r => r.map(x => x.id === id ? { ...x, status: action } : x))
-    toast.success(`Report marked as ${action}`)
+  const resolveReport = async (id, action) => {
+    const { error } = await supabase
+      .from('reports')
+      .update({ status: action })
+      .eq('id', id)
+    
+    if (!error) {
+      setReports(r => r.map(x => x.id === id ? { ...x, status: action } : x))
+      toast.success(`Report marked as ${action}`)
+    }
   }
 
-  const toggleVerify = (id) => {
-    setCreators(c => c.map(x => x.id === id ? { ...x, verified: !x.verified } : x))
+  const toggleVerify = async (id) => {
     const creator = creators.find(x => x.id === id)
-    toast.success(`${creator.name} ${creator.verified ? 'unverified' : 'verified'}`)
+    const { error } = await supabase
+      .from('profiles')
+      .update({ is_verified: !creator.is_verified })
+      .eq('id', id)
+    
+    if (!error) {
+      setCreators(c => c.map(x => x.id === id ? { ...x, is_verified: !x.is_verified } : x))
+      toast.success(`${creator.username} ${creator.is_verified ? 'unverified' : 'verified'}`)
+    }
   }
 
-  const toggleContent = (id) => {
-    setContent(c => c.map(x => x.id === id ? { ...x, published: !x.published } : x))
-    toast.success('Content status updated')
+  const toggleContent = async (id) => {
+    const item = content.find(x => x.id === id)
+    const { error } = await supabase
+      .from('content')
+      .update({ is_published: !item.is_published })
+      .eq('id', id)
+    
+    if (!error) {
+      setContent(c => c.map(x => x.id === id ? { ...x, is_published: !x.is_published } : x))
+      toast.success('Content status updated')
+    }
   }
 
   return (
@@ -243,11 +301,13 @@ export default function AdminPanel() {
         {/* Reports */}
         {activeTab === 'reports' && (
           <div className="card space-y-3 animate-fade-in">
-            {reports.map(r => (
+            {reports.length === 0 ? (
+              <p className="text-sm text-gray-400 text-center py-8">No reports</p>
+            ) : reports.map(r => (
               <div key={r.id} className="flex flex-col sm:flex-row sm:items-center gap-3 p-4 rounded-xl bg-gray-50 dark:bg-gray-800/30">
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-gray-900 dark:text-white truncate">{r.content}</p>
-                  <p className="text-xs text-gray-500 mt-0.5">Reason: {r.reason} · by @{r.reporter}</p>
+                  <p className="text-sm font-medium text-gray-900 dark:text-white truncate">{r.content?.title || 'Unknown'}</p>
+                  <p className="text-xs text-gray-500 mt-0.5">Reason: {r.reason} · by @{r.reporter?.username || 'Unknown'}</p>
                 </div>
                 <div className="flex items-center gap-2 shrink-0">
                   <Badge variant={r.status === 'pending' ? 'amber' : 'green'}>{r.status}</Badge>
@@ -268,20 +328,22 @@ export default function AdminPanel() {
         {/* Creators */}
         {activeTab === 'creators' && (
           <div className="card space-y-2 animate-fade-in">
-            {creators.map(c => (
+            {creators.length === 0 ? (
+              <p className="text-sm text-gray-400 text-center py-8">No creators</p>
+            ) : creators.map(c => (
               <div key={c.id} className="flex items-center gap-3 p-3 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors">
-                <Avatar name={c.name} size="sm" />
+                <Avatar name={c.username} size="sm" />
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-1.5">
-                    <p className="text-sm font-medium text-gray-900 dark:text-white">{c.name}</p>
-                    {c.verified && <RiMedalLine size={14} className="text-brand-500" />}
+                    <p className="text-sm font-medium text-gray-900 dark:text-white">{c.username}</p>
+                    {c.is_verified && <RiMedalLine size={14} className="text-brand-500" />}
                   </div>
                   <p className="text-xs text-gray-400">@{c.username} · {c.uploads} uploads</p>
                 </div>
                 <button onClick={() => toggleVerify(c.id)}
-                  className={`btn-sm ${c.verified ? 'btn-secondary' : 'btn-primary'}`}>
+                  className={`btn-sm ${c.is_verified ? 'btn-secondary' : 'btn-primary'}`}>
                   <RiMedalLine size={13} />
-                  {c.verified ? 'Unverify' : 'Verify'}
+                  {c.is_verified ? 'Unverify' : 'Verify'}
                 </button>
               </div>
             ))}
@@ -291,16 +353,18 @@ export default function AdminPanel() {
         {/* Content Moderation */}
         {activeTab === 'content' && (
           <div className="card space-y-2 animate-fade-in">
-            {content.map(c => (
+            {content.length === 0 ? (
+              <p className="text-sm text-gray-400 text-center py-8">No content</p>
+            ) : content.map(c => (
               <div key={c.id} className="flex items-center gap-3 p-3 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors">
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-medium text-gray-900 dark:text-white truncate">{c.title}</p>
-                  <p className="text-xs text-gray-400">by @{c.creator}</p>
+                  <p className="text-xs text-gray-400">by @{c.creator?.username || 'Unknown'}</p>
                 </div>
-                <Badge variant={c.published ? 'green' : 'gray'}>{c.published ? 'Live' : 'Draft'}</Badge>
+                <Badge variant={c.is_published ? 'green' : 'gray'}>{c.is_published ? 'Live' : 'Draft'}</Badge>
                 <button onClick={() => toggleContent(c.id)}
-                  className={`btn-sm ${c.published ? 'btn-danger' : 'btn-primary'}`}>
-                  {c.published ? 'Unpublish' : 'Publish'}
+                  className={`btn-sm ${c.is_published ? 'btn-danger' : 'btn-primary'}`}>
+                  {c.is_published ? 'Unpublish' : 'Publish'}
                 </button>
               </div>
             ))}

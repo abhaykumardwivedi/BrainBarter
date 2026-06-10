@@ -4,6 +4,9 @@ import {
   RiListCheck2, RiBookOpenLine, RiSparklingLine,
 } from 'react-icons/ri'
 import { Button, Badge } from '../components/common'
+import { supabase } from '../lib/supabase'
+import useAuthStore from '../store/authStore'
+import toast from 'react-hot-toast'
 
 const tabs = [
   { id: 'expected',  label: 'Expected Questions', icon: RiQuestionLine },
@@ -44,20 +47,49 @@ function AIResponseBox({ loading, response, placeholder }) {
 }
 
 export default function ExamMode() {
+  const { user } = useAuthStore()
   const [activeTab, setActiveTab] = useState('expected')
   const [subject, setSubject] = useState(subjects[0])
   const [topic, setTopic] = useState(topics[0])
   const [loading, setLoading] = useState(false)
   const [response, setResponse] = useState('')
 
-  const generate = () => {
+  const generate = async () => {
+    if (!user) {
+      toast.error('Please login to use AI features')
+      return
+    }
+    
     setLoading(true)
     setResponse('')
-    // TODO: call Express AI endpoint
-    setTimeout(() => {
+    
+    try {
+      const { data: { session } } = await supabase.auth.getSession()
+      const res = await fetch(`${import.meta.env.VITE_API_URL}/api/ai/exam-mode`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session.access_token}`
+        },
+        body: JSON.stringify({
+          taskType: activeTab,
+          subjectId: null,
+          topicId: null,
+          type: activeTab
+        })
+      })
+      
+      if (!res.ok) throw new Error('AI service unavailable')
+      
+      const data = await res.json()
+      setResponse(data.response || 'No response from AI')
+    } catch (err) {
+      console.error(err)
+      setResponse('AI service unavailable. Make sure the server is running at ' + import.meta.env.VITE_API_URL)
+      toast.error('Failed to generate content')
+    } finally {
       setLoading(false)
-      setResponse(`Sample AI response for ${activeTab} on ${topic} (${subject}).\n\n1. What is normalization?\n2. Explain 1NF, 2NF, 3NF with examples.\n3. What is BCNF and when is it violated?\n4. Difference between lossless and lossy decomposition.\n5. What are functional dependencies?`)
-    }, 2000)
+    }
   }
 
   return (

@@ -38,12 +38,12 @@ export default function Browse() {
     setLoadingContent(true)
     supabase
       .from('content')
-      .select(`*, creator:profiles(username, is_verified), topic:topics(name, unit:units(subject:subjects(id)))`)
+      .select(`*, creator:profiles(username, is_verified)`)
       .eq('is_published', true)
       .then(({ data }) => {
-        // Filter by subject through topic → unit → subject
-        const filtered = (data || []).filter(c =>
-          c.topic?.unit?.subject?.id === selectedSubject.id
+        // Filter by subject_name if available, otherwise show all
+        const filtered = (data || []).filter(c => 
+          !c.subject_name || c.subject_name === selectedSubject.name
         )
         setContent(filtered)
         setLoadingContent(false)

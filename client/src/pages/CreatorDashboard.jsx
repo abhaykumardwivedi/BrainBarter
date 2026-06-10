@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import {
   RiDashboardLine, RiUploadCloud2Line, RiEyeLine,
   RiLockUnlockLine, RiCopperCoinLine, RiStarLine,
@@ -7,24 +7,72 @@ import {
 import { Badge, TokenChip, Button } from '../components/common'
 import { Link } from 'react-router-dom'
 import useAuthStore from '../store/authStore'
-
-const mockUploads = [
-  { id: 1, title: 'Normalization — 1NF to BCNF', type: 'video', views: 320, unlocks: 48, rating: 4.8, tokens: 240, published: true  },
-  { id: 2, title: 'ER Diagram Complete Notes',   type: 'notes', views: 210, unlocks: 32, rating: 4.5, tokens: 96,  published: true  },
-  { id: 3, title: 'SQL Queries Cheatsheet',      type: 'notes', views: 0,   unlocks: 0,  rating: 0,   tokens: 0,   published: false },
-]
+import { supabase } from '../lib/supabase'
+import toast from 'react-hot-toast'
 
 export default function CreatorDashboard() {
-  const { profile } = useAuthStore()
-  const [uploads, setUploads] = useState(mockUploads)
+  const { user, profile } = useAuthStore()
+  const [uploads, setUploads] = useState([])
+  const [loading, setLoading] = useState(true)
 
-  const togglePublish = (id) => {
-    setUploads(u => u.map(c => c.id === id ? { ...c, published: !c.published } : c))
+  useEffect(() => {
+    if (!user) return
+    loadContent()
+  }, [user])
+
+  const loadContent = async () => {
+    const { data } = await supabase
+      .from('content')
+      .select('*')
+      .eq('creator_id', user.id)
+      .order('created_at', { ascending: false })
+    
+    setUploads(data || [])
+    setLoading(false)
   }
 
-  const totalTokens  = uploads.reduce((a, c) => a + c.tokens, 0)
-  const totalViews   = uploads.reduce((a, c) => a + c.views, 0)
-  const totalUnlocks = uploads.reduce((a, c) => a + c.unlocks, 0)
+  const togglePublish = async (id) => {
+    const content = uploads.find(c => c.id === id)
+    const { error } = await supabase
+      .from('content')
+      .update({ is_published: !content.is_published })
+      .eq('id', id)
+    
+    if (error) {
+      toast.error('Failed to update')
+      return
+    }
+    
+    setUploads(u => u.map(c => c.id === id ? { ...c, is_published: !c.is_published } : c))
+    toast.success(content.is_published ? 'Unpublished' : 'Published!')
+  }
+
+  const deleteContent = async (id) => {
+    if (!confirm('Delete this content? This cannot be undone.')) return
+    
+    const { error } = await supabase.from('content').delete().eq('id', id)
+    if (error) {
+      toast.error('Failed to delete')
+      return
+    }
+    
+    setUploads(u => u.filter(c => c.id !== id))
+    toast.success('Content deleted')
+  }
+
+  const totalViews   = uploads.reduce((a, c) => a + (c.views || 0), 0)
+  
+  if (loading) {
+    return (
+      <div className="page">
+        <div className="container-app py-8">
+          <div className="space-y-4">
+            {Array.from({ length: 5 }).map((_, i) => <div key={i} className="skeleton h-20 rounded-xl" />)}
+          </div>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="page">
@@ -47,12 +95,11 @@ export default function CreatorDashboard() {
         </div>
 
         {/* Stats */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-8">
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 mb-8">
           {[
-            { icon: RiCopperCoinLine,  label: 'Tokens Earned', value: totalTokens,  color: 'text-brand-500'  },
+            { icon: RiCopperCoinLine,  label: 'Token Balance', value: profile?.token_balance || 0,  color: 'text-brand-500'  },
             { icon: RiEyeLine,         label: 'Total Views',   value: totalViews,   color: 'text-blue-500'   },
-            { icon: RiLockUnlockLine,  label: 'Total Unlocks', value: totalUnlocks, color: 'text-green-500'  },
-            { icon: RiUploadCloud2Line,label: 'Uploads',       value: uploads.length, color: 'text-amber-500'},
+            { icon: RiUploadCloud2Line,label: 'Total Uploads', value: uploads.length, color: 'text-amber-500'},
           ].map(({ icon: Icon, label, value, color }) => (
             <div key={label} className="card-inset text-center py-5">
               <Icon size={20} className={`${color} mx-auto mb-2`} />
@@ -65,38 +112,44 @@ export default function CreatorDashboard() {
         {/* Content List */}
         <div className="card">
           <h3 className="font-display font-semibold text-gray-900 dark:text-white mb-4">Your Content</h3>
-          <div className="space-y-3">
+          {uploads.length === 0 ? (
+            <div className="text-center py-12">
+              <RiUploadCloud2Line size={48} className="text-gray-300 mx-auto mb-3" />
+              <p className="text-gray-500 dark:text-gray-400 mb-4">No content uploaded yet</p>
+              <Link to="/upload" className="btn-primary btn-sm">Upload Your First Content</Link>
+            </div>
+          ) : (
+            <div className="space-y-3">
             {uploads.map(c => (
               <div key={c.id} className="flex flex-col sm:flex-row sm:items-center gap-3 p-4 rounded-xl bg-gray-50 dark:bg-gray-800/30 hover:bg-brand-50 dark:hover:bg-brand-950/30 transition-colors">
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 mb-1">
                     <p className="text-sm font-medium text-gray-900 dark:text-white truncate">{c.title}</p>
                     <Badge variant={c.type === 'video' ? 'purple' : 'green'}>{c.type}</Badge>
-                    <Badge variant={c.published ? 'green' : 'gray'}>{c.published ? 'Live' : 'Draft'}</Badge>
+                    <Badge variant={c.is_published ? 'green' : 'gray'}>{c.is_published ? 'Live' : 'Draft'}</Badge>
                   </div>
                   <div className="flex flex-wrap gap-3 text-xs text-gray-500 dark:text-gray-400">
-                    <span className="flex items-center gap-1"><RiEyeLine size={11} /> {c.views} views</span>
-                    <span className="flex items-center gap-1"><RiLockUnlockLine size={11} /> {c.unlocks} unlocks</span>
-                    {c.rating > 0 && <span className="flex items-center gap-1"><RiStarLine size={11} /> {c.rating}</span>}
-                    <span className="flex items-center gap-1"><RiCopperCoinLine size={11} className="text-brand-500" /> {c.tokens} earned</span>
+                    <span className="flex items-center gap-1"><RiEyeLine size={11} /> {c.views || 0} views</span>
+                    <span className="flex items-center gap-1"><TokenChip amount={c.token_cost} /></span>
                   </div>
                 </div>
                 <div className="flex items-center gap-2 shrink-0">
                   <button onClick={() => togglePublish(c.id)}
-                    className={`btn-sm ${c.published ? 'btn-secondary' : 'btn-primary'}`}>
+                    className={`btn-sm ${c.is_published ? 'btn-secondary' : 'btn-primary'}`}>
                     <RiToggleLine size={14} />
-                    {c.published ? 'Unpublish' : 'Publish'}
+                    {c.is_published ? 'Unpublish' : 'Publish'}
                   </button>
                   <Link to={`/content/${c.id}`} className="btn-ghost btn-icon" title="View">
                     <RiEyeLine size={16} />
                   </Link>
-                  <button className="btn-ghost btn-icon text-red-400" title="Delete">
+                  <button onClick={() => deleteContent(c.id)} className="btn-ghost btn-icon text-red-400" title="Delete">
                     <RiDeleteBinLine size={16} />
                   </button>
                 </div>
               </div>
             ))}
           </div>
+          )}
         </div>
 
       </div>
