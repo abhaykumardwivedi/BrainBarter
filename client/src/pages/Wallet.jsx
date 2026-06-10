@@ -66,7 +66,7 @@ export default function Wallet() {
 
       script.onload = () => {
         const options = {
-          key: 'rzp_test_YOUR_KEY_HERE', // Replace with your Razorpay test key
+          key: 'rzp_test_T02Lsh3hB5fzIi', // Razorpay test key
           amount: inrAmount * 100, // Razorpay takes paise
           currency: 'INR',
           name: 'BrainBarter',

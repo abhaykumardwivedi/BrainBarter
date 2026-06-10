@@ -62,7 +62,7 @@ export default function ContentPage() {
     supabase.from('progress').select('completed_at').eq('user_id', user.id).eq('topic_id', content?.topic_id)
       .then(({ data }) => { if (data?.[0]?.completed_at) setMarked(true) })
     // Increment views
-    supabase.rpc('increment_views', { content_id: id }).then(() => {})
+    supabase.from('content').update({ views: (content?.views || 0) + 1 }).eq('id', id).then(() => {})
   }, [id, user])
 
   const handleUnlock = async () => {
