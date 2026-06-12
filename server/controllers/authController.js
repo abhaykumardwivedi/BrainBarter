@@ -35,7 +35,7 @@ exports.sendVerificationCode = async (req, res) => {
 
     res.json({ success: true })
   } catch (err) {
-    console.error('Email send error:', err.message)
+    console.error('Email send error:', err.response?.data || err.message)
     res.status(500).json({ error: 'Failed to send code' })
   }
 }
