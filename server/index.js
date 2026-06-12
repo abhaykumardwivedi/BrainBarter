@@ -7,7 +7,20 @@ const paymentRoutes = require('./routes/payment')
 
 const app = express()
 
-app.use(cors({ origin: process.env.CLIENT_URL }))
+app.use(cors({ 
+  origin: (origin, callback) => {
+    const allowedOrigins = [
+      process.env.CLIENT_URL,
+      'https://brain-barter-zeta.vercel.app',
+      /\.vercel\.app$/  // allow all Vercel preview URLs
+    ]
+    if (!origin || allowedOrigins.some(o => o instanceof RegExp ? o.test(origin) : o === origin)) {
+      callback(null, true)
+    } else {
+      callback(new Error('Not allowed by CORS'))
+    }
+  }
+}))
 app.use(express.json())
 
 app.get('/health', (_, res) => res.json({ status: 'ok' }))
