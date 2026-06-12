@@ -48,6 +48,9 @@ export default function ContentPage() {
       .eq('id', id).single()
       .then(({ data }) => { setContent(data); setLoading(false) })
 
+    // Increment views atomically (counts anonymous views too)
+    supabase.rpc('increment_views', { content_id: id }).then(() => {})
+
     if (!user) return
     // Check unlock
     supabase.from('unlocks').select('id').eq('user_id', user.id).eq('content_id', id).single()
@@ -58,12 +61,15 @@ export default function ContentPage() {
     // Check rating
     supabase.from('ratings').select('stars').eq('user_id', user.id).eq('content_id', id).single()
       .then(({ data }) => { if (data) setUserRating(data.stars) })
-    // Check progress
-    supabase.from('progress').select('completed_at').eq('user_id', user.id).eq('topic_id', content?.topic_id)
-      .then(({ data }) => { if (data?.[0]?.completed_at) setMarked(true) })
-    // Increment views
-    supabase.from('content').update({ views: (content?.views || 0) + 1 }).eq('id', id).then(() => {})
   }, [id, user])
+
+  // Check progress once content (and its topic_id) is loaded
+  useEffect(() => {
+    if (!user || !content?.topic_id) return
+    supabase.from('progress').select('completed_at')
+      .eq('user_id', user.id).eq('topic_id', content.topic_id)
+      .then(({ data }) => { if (data?.[0]?.completed_at) setMarked(true) })
+  }, [user, content?.topic_id])
 
   const handleUnlock = async () => {
     if (!user) return toast.error('Please login to unlock')

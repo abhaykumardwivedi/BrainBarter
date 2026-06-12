@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
   RiUploadCloud2Line, RiVideoLine, RiFileTextLine,
@@ -9,7 +9,6 @@ import { supabase } from '../lib/supabase'
 import useAuthStore from '../store/authStore'
 import toast from 'react-hot-toast'
 
-const subjects = ['Database Management', 'Operating Systems', 'Computer Networks', 'Data Structures', 'Other']
 const topics   = ['Normalization', 'ER Diagrams', 'SQL', 'Transactions', 'Indexing', 'Other']
 const difficulties = ['beginner', 'medium', 'advanced']
 
@@ -20,8 +19,19 @@ export default function Upload() {
     title: '', description: '', subject: '', topic: '', type: 'video', difficulty: 'medium',
     tokenCost: 20, tags: '',
   })
+  const [subjects, setSubjects] = useState([])
   const [customSubject, setCustomSubject] = useState('')
   const [customTopic, setCustomTopic] = useState('')
+
+  // Load real subjects so uploaded content matches what Browse filters on
+  useEffect(() => {
+    supabase.from('subjects').select('id, name').order('semester')
+      .then(({ data }) => {
+        const list = data || []
+        setSubjects(list)
+        setForm(f => ({ ...f, subject: f.subject || list[0]?.name || '' }))
+      })
+  }, [])
   const [file, setFile] = useState(null)
   const [thumb, setThumb] = useState(null)
   const [progress, setProgress] = useState(0)
@@ -60,6 +70,9 @@ export default function Upload() {
         setUploading(false)
         return
       }
+
+      // Link to a real subject row when possible (null for custom "Other" subjects)
+      const subjectId = subjects.find(s => s.name === finalSubject)?.id || null
 
       // Upload file to Supabase Storage
       const fileExt = file.name.split('.').pop()
@@ -103,7 +116,8 @@ export default function Upload() {
         difficulty: form.difficulty,
         tags: form.tags.split(',').map(t => t.trim()).filter(Boolean),
         is_published: false,
-        // Store subject and topic as metadata for filtering
+        // Store subject and topic for filtering in Browse
+        subject_id: subjectId,
         subject_name: finalSubject,
         topic_name: finalTopic,
       })
@@ -190,7 +204,8 @@ export default function Upload() {
               <div>
                 <label className="input-label">Subject</label>
                 <select name="subject" className="input" value={form.subject} onChange={handle}>
-                  {subjects.map(s => <option key={s}>{s}</option>)}
+                  {subjects.map(s => <option key={s.id} value={s.name}>{s.name}</option>)}
+                  <option value="Other">Other</option>
                 </select>
                 {form.subject === 'Other' && (
                   <input

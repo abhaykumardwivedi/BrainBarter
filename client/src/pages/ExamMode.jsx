@@ -65,7 +65,7 @@ export default function ExamMode() {
     
     try {
       const { data: { session } } = await supabase.auth.getSession()
-      const res = await fetch(`${import.meta.env.VITE_API_URL}/api/ai/exam-mode`, {
+      const res = await fetch(`${import.meta.env.VITE_API_URL}/api/ai/exam`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -73,9 +73,8 @@ export default function ExamMode() {
         },
         body: JSON.stringify({
           taskType: activeTab,
-          subjectId: null,
-          topicId: null,
-          type: activeTab
+          subject,
+          topic,
         })
       })
       

@@ -32,19 +32,24 @@ async function assist(req, res) {
 }
 
 async function examMode(req, res) {
-  const { taskType, subjectId, topicId, type } = req.body
+  const { taskType, subjectId, topicId, subject, topic } = req.body
   if (!taskType) return res.status(400).json({ error: 'taskType is required' })
 
   try {
     let context = ''
 
-    if (topicId) {
-      const { data: topic } = await supabase.from('topics').select('name').eq('id', topicId).single()
-      if (topic) context += `Topic: ${topic.name}\n`
+    // Prefer free-text subject/topic sent from the client; fall back to DB lookups by id
+    if (topic) {
+      context += `Topic: ${topic}\n`
+    } else if (topicId) {
+      const { data: topicRow } = await supabase.from('topics').select('name').eq('id', topicId).single()
+      if (topicRow) context += `Topic: ${topicRow.name}\n`
     }
-    if (subjectId) {
-      const { data: subject } = await supabase.from('subjects').select('name').eq('id', subjectId).single()
-      if (subject) context += `Subject: ${subject.name}\n`
+    if (subject) {
+      context += `Subject: ${subject}\n`
+    } else if (subjectId) {
+      const { data: subjectRow } = await supabase.from('subjects').select('name').eq('id', subjectId).single()
+      if (subjectRow) context += `Subject: ${subjectRow.name}\n`
       // Fetch PYQ context
       const { data: pyqs } = await supabase.from('pyqs').select('text_dump').eq('subject_id', subjectId).limit(3)
       if (pyqs?.length) context += `\nPrevious Year Questions Context:\n${pyqs.map(p => p.text_dump).join('\n')}`
@@ -52,6 +57,7 @@ async function examMode(req, res) {
     if (!context) context = 'General academic content'
 
     const examTaskMap = {
+      'expected':           'expected-questions',
       'expected-questions': 'expected-questions',
       'mock':               'mock-test',
       'revision':           'revision-sheet',
