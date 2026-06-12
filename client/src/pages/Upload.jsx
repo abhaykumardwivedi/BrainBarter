@@ -145,7 +145,7 @@ export default function Upload() {
           <h2 className="text-xl font-display font-bold text-gray-900 dark:text-white mb-2">Upload Successful!</h2>
           <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">Your content is saved as draft. Publish it when ready.</p>
           <div className="flex gap-2">
-            <Button variant="secondary" className="flex-1" onClick={() => { setDone(false); setFile(null); setProgress(0) }}>
+            <Button variant="secondary" className="flex-1" onClick={() => { setDone(false); setFile(null); setThumb(null); setProgress(0); setUploading(false); setForm(f => ({ ...f, title: '', description: '', tags: '' })) }}>
               Upload More
             </Button>
             <Button className="flex-1" onClick={() => navigate('/dashboard')}>View Content</Button>
