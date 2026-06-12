@@ -76,64 +76,67 @@ export default function Wallet() {
     const tokens = inrAmount * CONVERSION_RATE
     setProcessing(true)
 
-    const loaded = await loadRazorpayScript()
-    if (!loaded) {
-      toast.error('Failed to load payment gateway. Check your connection.')
-      setProcessing(false)
-      return
-    }
+    try {
+      const loaded = await loadRazorpayScript()
+      if (!loaded) throw new Error('Failed to load payment gateway. Check your connection.')
 
-    const options = {
-      key: 'rzp_test_T02Lsh3hB5fzIi', // Razorpay test key
-      amount: inrAmount * 100, // Razorpay takes paise
-      currency: 'INR',
-      name: 'BrainBarter',
-      description: `Buy ${tokens} tokens`,
-      handler: async (response) => {
-        // Payment successful - credit tokens
-        // NOTE: credited client-side without verifying the Razorpay signature.
-        // See #6: a server-side verify endpoint is still needed to make this tamper-proof.
-        const { error } = await supabase
-          .from('token_transactions')
-          .insert({
-            user_id: profile.id,
-            type: 'earn',
-            amount: tokens,
-            reason: `Purchased ${tokens} tokens for ₹${inrAmount}`,
+      // 1. Ask the server to create an order — the token amount is locked in server-side
+      const { data: { session } } = await supabase.auth.getSession()
+      const orderRes = await fetch(`${import.meta.env.VITE_API_URL}/api/payment/create-order`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session.access_token}` },
+        body: JSON.stringify({ amount: inrAmount }),
+      })
+      const order = await orderRes.json()
+      if (!orderRes.ok) throw new Error(order.error || 'Could not start payment')
+
+      // 2. Open Razorpay checkout for that order
+      const options = {
+        key: order.keyId,
+        amount: order.amount,
+        currency: order.currency,
+        order_id: order.orderId,
+        name: 'BrainBarter',
+        description: `Buy ${tokens} tokens`,
+        handler: async (response) => {
+          // 3. Verify server-side; tokens are credited there, not in the browser
+          const verifyRes = await fetch(`${import.meta.env.VITE_API_URL}/api/payment/verify`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session.access_token}` },
+            body: JSON.stringify({
+              razorpay_order_id: response.razorpay_order_id,
+              razorpay_payment_id: response.razorpay_payment_id,
+              razorpay_signature: response.razorpay_signature,
+            }),
           })
+          const result = await verifyRes.json()
+          if (!verifyRes.ok || !result.success) {
+            toast.error(result.error || 'Payment verification failed')
+            return
+          }
 
-        if (!error) {
-          const { data } = await supabase
-            .from('profiles')
-            .update({ token_balance: profile.token_balance + tokens })
-            .eq('id', profile.id)
-            .select()
-            .single()
-
-          setProfile(data)
-          toast.success(`${tokens} tokens added!`)
+          setProfile({ ...profile, token_balance: result.token_balance })
+          toast.success(`${result.tokens} tokens added!`)
           setBuyModal(false)
           setAmount('')
-          // Refresh transactions
           const { data: txns } = await supabase
             .from('token_transactions')
             .select('*')
             .eq('user_id', profile.id)
             .order('created_at', { ascending: false })
           setTransactions(txns || [])
-        }
-      },
-      prefill: {
-        email: profile.email,
-      },
-      theme: {
-        color: '#5B21B6',
-      },
+        },
+        prefill: { email: profile.email },
+        theme: { color: '#5B21B6' },
+      }
+      const rzp = new window.Razorpay(options)
+      rzp.on('payment.failed', () => toast.error('Payment failed. Please try again.'))
+      rzp.open()
+    } catch (err) {
+      toast.error(err.message || 'Payment failed')
+    } finally {
+      setProcessing(false)
     }
-    const rzp = new window.Razorpay(options)
-    rzp.on('payment.failed', () => toast.error('Payment failed. Please try again.'))
-    rzp.open()
-    setProcessing(false)
   }
 
   const handleWithdraw = async () => {
