@@ -16,13 +16,38 @@ export default function Leaderboard() {
 
   useEffect(() => {
     setLoading(true)
-    supabase
-      .from('profiles')
-      .select('id, username, avatar_url, token_balance, is_verified')
-      .order('token_balance', { ascending: false })
-      .limit(10)
-      .then(({ data }) => {
-        setLeaders(data || [])
+    let query = supabase
+      .from('token_transactions')
+      .select('user_id')
+    
+    const now = new Date()
+    if (period === 'week') {
+      query = query.gte('created_at', new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000).toISOString())
+    } else if (period === 'month') {
+      query = query.gte('created_at', new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000).toISOString())
+    }
+    
+    query.eq('type', 'earn')
+      .then(async ({ data: txns }) => {
+        const userEarnings = {}
+        txns.forEach(t => {
+          userEarnings[t.user_id] = (userEarnings[t.user_id] || 0) + 1
+        })
+        const userIds = Object.keys(userEarnings).sort((a, b) => userEarnings[b] - userEarnings[a]).slice(0, 10)
+        
+        if (userIds.length === 0) {
+          setLeaders([])
+          setLoading(false)
+          return
+        }
+        
+        const { data: profiles } = await supabase
+          .from('profiles')
+          .select('id, username, avatar_url, token_balance, is_verified')
+          .in('id', userIds)
+        
+        const sorted = userIds.map(uid => profiles.find(p => p.id === uid)).filter(Boolean)
+        setLeaders(sorted)
         setLoading(false)
       })
   }, [period])
