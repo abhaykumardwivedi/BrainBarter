@@ -17,19 +17,21 @@ export default function Register() {
 
   const handle = e => setForm(f => ({ ...f, [e.target.name]: e.target.value }))
 
-  const validate = () => {
-    const e = {}
-    if (!form.username.trim()) e.username = 'Username is required'
-    if (form.username.length < 3) e.username = 'Min 3 characters'
-    if (!form.email.trim()) e.email = 'Email is required'
-    if (form.password.length < 8) e.password = 'Min 8 characters'
-    setErrors(e)
-    return Object.keys(e).length === 0
-  }
-
   const sendCode = async e => {
     e.preventDefault()
-    if (!validate()) return
+    
+    // Validate
+    const newErrors = {}
+    if (form.username.length < 3) newErrors.username = 'Min 3 characters'
+    if (!form.email.includes('@')) newErrors.email = 'Invalid email'
+    if (form.password.length < 8) newErrors.password = 'Min 8 characters'
+    
+    if (Object.keys(newErrors).length > 0) {
+      setErrors(newErrors)
+      return
+    }
+    
+    setErrors({})
     setLoading(true)
     try {
       const res = await fetch(`${import.meta.env.VITE_API_URL}/api/auth/send-verification`, {
@@ -37,8 +39,8 @@ export default function Register() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email: form.email }),
       })
-      if (!res.ok) throw new Error('Failed to send code')
-      toast.success('Verification code sent to your email')
+      if (!res.ok) throw new Error('Failed to send verification code')
+      toast.success('Verification code sent to your email!')
       setStep(2)
     } catch (err) {
       toast.error(err.message || 'Failed to send code')
