@@ -110,14 +110,14 @@ export default function ContentPage() {
 
   const handleRating = async (stars) => {
     if (!user) return toast.error('Please login')
-    await supabase.from('ratings').upsert({ user_id: user.id, content_id: id, stars })
+    const firstRating = userRating === 0
+    // Atomic, server-side: upserts the rating and awards +2 tokens ONLY on first rating
+    const { error } = await supabase.rpc('rate_content', { p_content_id: id, p_stars: stars })
+    if (error) return toast.error(error.message)
     setUserRating(stars)
-    // Give +2 tokens for rating
-    await supabase.from('token_transactions').insert({ user_id: user.id, type: 'earn', amount: 2, reason: 'Rated content', ref_id: id })
-    await supabase.from('profiles').update({ token_balance: (profile.token_balance || 0) + 2 }).eq('id', user.id)
     const { data: updatedProfile } = await supabase.from('profiles').select('*').eq('id', user.id).single()
     setProfile(updatedProfile)
-    toast.success(`Rated ${stars} stars! +2 tokens`)
+    toast.success(firstRating ? `Rated ${stars} stars! +2 tokens` : `Updated rating to ${stars} stars`)
   }
 
   const handleMarkComplete = async () => {

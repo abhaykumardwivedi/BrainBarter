@@ -14,6 +14,24 @@ const CONVERSION_RATE = 10 // ₹1 = 10 tokens
 const WITHDRAWAL_FEE = 0.20 // 20% platform fee
 const MIN_WITHDRAWAL_TOKENS = 625 // ₹50 min withdrawal
 
+// Load the Razorpay checkout script exactly once (avoids stacking <script> tags per click)
+const loadRazorpayScript = () =>
+  new Promise((resolve) => {
+    if (window.Razorpay) return resolve(true)
+    const existing = document.getElementById('razorpay-checkout-js')
+    if (existing) {
+      existing.addEventListener('load', () => resolve(true))
+      existing.addEventListener('error', () => resolve(false))
+      return
+    }
+    const script = document.createElement('script')
+    script.id = 'razorpay-checkout-js'
+    script.src = 'https://checkout.razorpay.com/v1/checkout.js'
+    script.onload = () => resolve(true)
+    script.onerror = () => resolve(false)
+    document.body.appendChild(script)
+  })
+
 export default function Wallet() {
   const { profile, setProfile } = useAuthStore()
   const [transactions, setTransactions] = useState([])
@@ -58,66 +76,64 @@ export default function Wallet() {
     const tokens = inrAmount * CONVERSION_RATE
     setProcessing(true)
 
-    try {
-      // Load Razorpay script
-      const script = document.createElement('script')
-      script.src = 'https://checkout.razorpay.com/v1/checkout.js'
-      document.body.appendChild(script)
-
-      script.onload = () => {
-        const options = {
-          key: 'rzp_test_T02Lsh3hB5fzIi', // Razorpay test key
-          amount: inrAmount * 100, // Razorpay takes paise
-          currency: 'INR',
-          name: 'BrainBarter',
-          description: `Buy ${tokens} tokens`,
-          handler: async (response) => {
-            // Payment successful - credit tokens
-            const { error } = await supabase
-              .from('token_transactions')
-              .insert({
-                user_id: profile.id,
-                type: 'earn',
-                amount: tokens,
-                reason: `Purchased ${tokens} tokens for ₹${inrAmount}`,
-              })
-
-            if (!error) {
-              const { data } = await supabase
-                .from('profiles')
-                .update({ token_balance: profile.token_balance + tokens })
-                .eq('id', profile.id)
-                .select()
-                .single()
-              
-              setProfile(data)
-              toast.success(`${tokens} tokens added!`)
-              setBuyModal(false)
-              setAmount('')
-              // Refresh transactions
-              const { data: txns } = await supabase
-                .from('token_transactions')
-                .select('*')
-                .eq('user_id', profile.id)
-                .order('created_at', { ascending: false })
-              setTransactions(txns || [])
-            }
-          },
-          prefill: {
-            email: profile.email,
-          },
-          theme: {
-            color: '#5B21B6',
-          },
-        }
-        const rzp = new window.Razorpay(options)
-        rzp.open()
-        setProcessing(false)
-      }
-    } catch (err) {
-      toast.error('Payment failed')
+    const loaded = await loadRazorpayScript()
+    if (!loaded) {
+      toast.error('Failed to load payment gateway. Check your connection.')
       setProcessing(false)
+      return
     }
+
+    const options = {
+      key: 'rzp_test_T02Lsh3hB5fzIi', // Razorpay test key
+      amount: inrAmount * 100, // Razorpay takes paise
+      currency: 'INR',
+      name: 'BrainBarter',
+      description: `Buy ${tokens} tokens`,
+      handler: async (response) => {
+        // Payment successful - credit tokens
+        // NOTE: credited client-side without verifying the Razorpay signature.
+        // See #6: a server-side verify endpoint is still needed to make this tamper-proof.
+        const { error } = await supabase
+          .from('token_transactions')
+          .insert({
+            user_id: profile.id,
+            type: 'earn',
+            amount: tokens,
+            reason: `Purchased ${tokens} tokens for ₹${inrAmount}`,
+          })
+
+        if (!error) {
+          const { data } = await supabase
+            .from('profiles')
+            .update({ token_balance: profile.token_balance + tokens })
+            .eq('id', profile.id)
+            .select()
+            .single()
+
+          setProfile(data)
+          toast.success(`${tokens} tokens added!`)
+          setBuyModal(false)
+          setAmount('')
+          // Refresh transactions
+          const { data: txns } = await supabase
+            .from('token_transactions')
+            .select('*')
+            .eq('user_id', profile.id)
+            .order('created_at', { ascending: false })
+          setTransactions(txns || [])
+        }
+      },
+      prefill: {
+        email: profile.email,
+      },
+      theme: {
+        color: '#5B21B6',
+      },
+    }
+    const rzp = new window.Razorpay(options)
+    rzp.on('payment.failed', () => toast.error('Payment failed. Please try again.'))
+    rzp.open()
+    setProcessing(false)
   }
 
   const handleWithdraw = async () => {

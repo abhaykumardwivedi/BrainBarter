@@ -58,7 +58,7 @@ export default function App() {
             <Route path="/upload"    element={<ProtectedRoute><Upload /></ProtectedRoute>} />
             <Route path="/profile"   element={<ProtectedRoute><Profile /></ProtectedRoute>} />
             <Route path="/dashboard" element={<ProtectedRoute><CreatorDashboard /></ProtectedRoute>} />
-            <Route path="/admin"     element={<ProtectedRoute><AdminPanel /></ProtectedRoute>} />
+            <Route path="/admin"     element={<ProtectedRoute adminOnly><AdminPanel /></ProtectedRoute>} />
 
             {/* 404 */}
             <Route path="*" element={<NotFound />} />
