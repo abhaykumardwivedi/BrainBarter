@@ -1,10 +1,8 @@
-const axios = require('axios')
+const sgMail = require('@sendgrid/mail')
 
 const codes = new Map() // In-memory store: email -> {code, expires}
 
-const MAILGUN_DOMAIN = process.env.MAILGUN_DOMAIN
-const MAILGUN_API_KEY = process.env.MAILGUN_API_KEY
-const MAILGUN_BASE_URL = `https://api.mailgun.net/v3/${MAILGUN_DOMAIN}`
+sgMail.setApiKey(process.env.SENDGRID_API_KEY)
 
 exports.sendVerificationCode = async (req, res) => {
   try {
@@ -14,24 +12,19 @@ exports.sendVerificationCode = async (req, res) => {
     const code = Math.floor(100000 + Math.random() * 900000).toString()
     codes.set(email, { code, expires: Date.now() + 10 * 60 * 1000 }) // 10 min
 
-    await axios.post(`${MAILGUN_BASE_URL}/messages`, 
-      {
-        from: `BrainBarter <noreply@${MAILGUN_DOMAIN}>`,
-        to: email,
-        subject: 'BrainBarter - Verify Your Email',
-        html: `
-          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-            <h2 style="color: #7c3aed;">Verify Your Email</h2>
-            <p>Your verification code is:</p>
-            <h1 style="background: #f3f4f6; padding: 20px; text-align: center; letter-spacing: 8px;">${code}</h1>
-            <p style="color: #6b7280;">This code expires in 10 minutes.</p>
-          </div>
-        `,
-      },
-      {
-        auth: { username: 'api', password: MAILGUN_API_KEY }
-      }
-    )
+    await sgMail.send({
+      to: email,
+      from: 'noreply@brainbarter.com',
+      subject: 'BrainBarter - Verify Your Email',
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+          <h2 style="color: #7c3aed;">Verify Your Email</h2>
+          <p>Your verification code is:</p>
+          <h1 style="background: #f3f4f6; padding: 20px; text-align: center; letter-spacing: 8px;">${code}</h1>
+          <p style="color: #6b7280;">This code expires in 10 minutes.</p>
+        </div>
+      `,
+    })
 
     res.json({ success: true })
   } catch (err) {
