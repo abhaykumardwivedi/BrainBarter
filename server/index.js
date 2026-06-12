@@ -3,6 +3,7 @@ const express = require('express')
 const cors    = require('cors')
 const aiRoutes = require('./routes/ai')
 const authRoutes = require('./routes/auth')
+const paymentRoutes = require('./routes/payment')
 
 const app = express()
 
@@ -12,6 +13,7 @@ app.use(express.json())
 app.get('/health', (_, res) => res.json({ status: 'ok' }))
 app.use('/api/ai', aiRoutes)
 app.use('/api/auth', authRoutes)
+app.use('/api/payment', paymentRoutes)
 
 app.use((err, req, res, next) => {
   console.error(err.stack)
