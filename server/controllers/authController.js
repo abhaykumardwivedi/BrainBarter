@@ -1,7 +1,10 @@
-const { Resend } = require('resend')
+const axios = require('axios')
 
 const codes = new Map() // In-memory store: email -> {code, expires}
-const resend = new Resend(process.env.RESEND_API_KEY)
+
+const MAILGUN_DOMAIN = process.env.MAILGUN_DOMAIN
+const MAILGUN_API_KEY = process.env.MAILGUN_API_KEY
+const MAILGUN_BASE_URL = `https://api.mailgun.net/v3/${MAILGUN_DOMAIN}`
 
 exports.sendVerificationCode = async (req, res) => {
   try {
@@ -11,23 +14,28 @@ exports.sendVerificationCode = async (req, res) => {
     const code = Math.floor(100000 + Math.random() * 900000).toString()
     codes.set(email, { code, expires: Date.now() + 10 * 60 * 1000 }) // 10 min
 
-    await resend.emails.send({
-      from: 'BrainBarter <onboarding@resend.dev>',
-      to: email,
-      subject: 'BrainBarter - Verify Your Email',
-      html: `
-        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-          <h2 style="color: #7c3aed;">Verify Your Email</h2>
-          <p>Your verification code is:</p>
-          <h1 style="background: #f3f4f6; padding: 20px; text-align: center; letter-spacing: 8px;">${code}</h1>
-          <p style="color: #6b7280;">This code expires in 10 minutes.</p>
-        </div>
-      `,
-    })
+    await axios.post(`${MAILGUN_BASE_URL}/messages`, 
+      {
+        from: `BrainBarter <noreply@${MAILGUN_DOMAIN}>`,
+        to: email,
+        subject: 'BrainBarter - Verify Your Email',
+        html: `
+          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+            <h2 style="color: #7c3aed;">Verify Your Email</h2>
+            <p>Your verification code is:</p>
+            <h1 style="background: #f3f4f6; padding: 20px; text-align: center; letter-spacing: 8px;">${code}</h1>
+            <p style="color: #6b7280;">This code expires in 10 minutes.</p>
+          </div>
+        `,
+      },
+      {
+        auth: { username: 'api', password: MAILGUN_API_KEY }
+      }
+    )
 
     res.json({ success: true })
   } catch (err) {
-    console.error(err)
+    console.error('Email send error:', err.message)
     res.status(500).json({ error: 'Failed to send code' })
   }
 }
