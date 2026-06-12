@@ -1,16 +1,7 @@
-const nodemailer = require('nodemailer')
+const { Resend } = require('resend')
 
 const codes = new Map() // In-memory store: email -> {code, expires}
-
-const transporter = nodemailer.createTransport({
-  host: 'smtp.gmail.com',
-  port: 587,
-  secure: false, // Use TLS
-  auth: {
-    user: process.env.EMAIL_USER,
-    pass: process.env.EMAIL_PASS,
-  },
-})
+const resend = new Resend(process.env.RESEND_API_KEY)
 
 exports.sendVerificationCode = async (req, res) => {
   try {
@@ -20,8 +11,8 @@ exports.sendVerificationCode = async (req, res) => {
     const code = Math.floor(100000 + Math.random() * 900000).toString()
     codes.set(email, { code, expires: Date.now() + 10 * 60 * 1000 }) // 10 min
 
-    await transporter.sendMail({
-      from: process.env.EMAIL_USER,
+    await resend.emails.send({
+      from: 'BrainBarter <onboarding@resend.dev>',
       to: email,
       subject: 'BrainBarter - Verify Your Email',
       html: `
