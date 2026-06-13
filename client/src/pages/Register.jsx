@@ -174,7 +174,7 @@ export default function Register() {
                 </div>
                 <div>
                   <p className="text-sm font-medium text-gray-800 dark:text-gray-200">Check your email</p>
-                  <p className="text-xs text-gray-500 dark:text-gray-400">Enter the 6-digit code we sent</p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">Enter the 6-digit code we sent. If you don't see it, check your spam folder.</p>
                 </div>
               </div>
 
