@@ -1,11 +1,9 @@
 const axios = require('axios')
-const FormData = require('form-data')
 
 const codes = new Map() // In-memory store: email -> {code, expires}
 
-const MAILGUN_DOMAIN = process.env.MAILGUN_DOMAIN
-const MAILGUN_API_KEY = process.env.MAILGUN_API_KEY
-const MAILGUN_BASE_URL = `${process.env.MAILGUN_BASE_URL}/v3/${MAILGUN_DOMAIN}`
+const SENDGRID_API_KEY = process.env.SENDGRID_API_KEY
+const SENDGRID_FROM = process.env.SENDGRID_FROM // verified sender email
 
 exports.sendVerificationCode = async (req, res) => {
   try {
@@ -15,22 +13,26 @@ exports.sendVerificationCode = async (req, res) => {
     const code = Math.floor(100000 + Math.random() * 900000).toString()
     codes.set(email, { code, expires: Date.now() + 10 * 60 * 1000 }) // 10 min
 
-    const form = new FormData()
-    form.append('from', `BrainBarter <noreply@${MAILGUN_DOMAIN}>`)
-    form.append('to', email)
-    form.append('subject', 'BrainBarter - Verify Your Email')
-    form.append('html', `
-      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-        <h2 style="color: #7c3aed;">Verify Your Email</h2>
-        <p>Your verification code is:</p>
-        <h1 style="background: #f3f4f6; padding: 20px; text-align: center; letter-spacing: 8px;">${code}</h1>
-        <p style="color: #6b7280;">This code expires in 10 minutes.</p>
-      </div>
-    `)
-
-    await axios.post(`${MAILGUN_BASE_URL}/messages`, form, {
-      auth: { username: 'api', password: MAILGUN_API_KEY },
-      headers: form.getHeaders()
+    await axios.post('https://api.sendgrid.com/v3/mail/send', {
+      personalizations: [{ to: [{ email }] }],
+      from: { email: SENDGRID_FROM, name: 'BrainBarter' },
+      subject: 'BrainBarter - Verify Your Email',
+      content: [{
+        type: 'text/html',
+        value: `
+          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+            <h2 style="color: #7c3aed;">Verify Your Email</h2>
+            <p>Your verification code is:</p>
+            <h1 style="background: #f3f4f6; padding: 20px; text-align: center; letter-spacing: 8px;">${code}</h1>
+            <p style="color: #6b7280;">This code expires in 10 minutes.</p>
+          </div>
+        `
+      }]
+    }, {
+      headers: {
+        Authorization: `Bearer ${SENDGRID_API_KEY}`,
+        'Content-Type': 'application/json'
+      }
     })
 
     res.json({ success: true })
