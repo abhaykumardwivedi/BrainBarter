@@ -48,13 +48,13 @@ export default {
         'neu-dark-inset': 'inset 4px 4px 8px #0f0a1e, inset -4px -4px 8px #2d1f4e',
         'glow':      '0 0 20px rgba(157, 78, 221, 0.35)',
         'glow-lg':   '0 0 40px rgba(157, 78, 221, 0.45)',
-        'glow-exam': '0 0 24px rgba(220, 38, 38, 0.4)',
+        'glow-exam': '0 0 28px rgba(255, 32, 32, 0.55)',
       },
       backgroundImage: {
         'gradient-brand': 'linear-gradient(135deg, #c77dff 0%, #7b2cbf 100%)',
         'gradient-soft':  'linear-gradient(135deg, #faf5ff 0%, #f3e8ff 100%)',
         'gradient-dark':  'linear-gradient(135deg, #1e1033 0%, #0f0a1e 100%)',
-        'gradient-exam':  'linear-gradient(135deg, #ef4444 0%, #7f1d1d 100%)',
+        'gradient-exam':  'linear-gradient(135deg, #ff2020 0%, #8b0000 100%)',
       },
       borderRadius: {
         'xl':  '1rem',
