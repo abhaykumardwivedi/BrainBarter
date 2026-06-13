@@ -45,7 +45,7 @@ export default function ContentPage() {
     // Fetch content
     supabase.from('content')
       .select('*, creator:profiles(id, username, avatar_url, is_verified)')
-      .eq('id', id).single()
+      .eq('id', id).maybeSingle()
       .then(({ data }) => { setContent(data); setLoading(false) })
 
     // Increment views atomically (counts anonymous views too)
@@ -110,14 +110,16 @@ export default function ContentPage() {
 
   const handleRating = async (stars) => {
     if (!user) return toast.error('Please login')
-    const firstRating = userRating === 0
-    // Atomic, server-side: upserts the rating and awards +2 tokens ONLY on first rating
+    const isOwnContent = content?.creator?.id === user.id
+    const awardsTokens = userRating === 0 && !isOwnContent
+    // Atomic, server-side: upserts the rating and awards +2 tokens ONLY on first
+    // rating of someone else's content (self-rating earns nothing).
     const { error } = await supabase.rpc('rate_content', { p_content_id: id, p_stars: stars })
     if (error) return toast.error(error.message)
     setUserRating(stars)
     const { data: updatedProfile } = await supabase.from('profiles').select('*').eq('id', user.id).single()
     setProfile(updatedProfile)
-    toast.success(firstRating ? `Rated ${stars} stars! +2 tokens` : `Updated rating to ${stars} stars`)
+    toast.success(awardsTokens ? `Rated ${stars} stars! +2 tokens` : `Rated ${stars} stars`)
   }
 
   const handleMarkComplete = async () => {
@@ -262,7 +264,9 @@ export default function ContentPage() {
                       <RiStarFill size={24} className={s <= userRating ? 'text-amber-400' : 'text-gray-200 dark:text-gray-700'} />
                     </button>
                   ))}
-                  {userRating > 0 && <span className="text-xs text-gray-500 ml-2">+2 tokens earned!</span>}
+                  {userRating > 0 && content?.creator?.id !== user?.id && (
+                    <span className="text-xs text-gray-500 ml-2">+2 tokens earned!</span>
+                  )}
                 </div>
               </div>
             )}

@@ -86,7 +86,7 @@ export default function Register() {
       if (!verifyRes.ok) throw new Error('Invalid or expired code')
 
       // Create account
-      const { data, error } = await supabase.auth.signUp({
+      const { error } = await supabase.auth.signUp({
         email: form.email,
         password: form.password,
         options: { data: { username: form.username } },
