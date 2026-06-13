@@ -97,17 +97,13 @@ export default function AdminPanel() {
         loadWithdrawals()
       }
     } else if (action === 'reject') {
+      // Guard against double-refund: only act on still-pending requests
+      if (request.status !== 'pending') return toast.error('This request was already processed')
       const reason = prompt('Rejection reason:')
       if (!reason) return
 
-      // Refund tokens using SQL function
-      await supabase.rpc('refund_tokens', {
-        p_user_id: request.user_id,
-        p_amount: request.tokens_amount,
-        p_reason: `Withdrawal rejected: ${reason}`,
-      })
-
-      const { error } = await supabase
+      // Mark rejected FIRST (and only if still pending) so a refund can't run twice
+      const { data: updated, error } = await supabase
         .from('withdrawal_requests')
         .update({
           status: 'rejected',
@@ -115,11 +111,25 @@ export default function AdminPanel() {
           processed_at: new Date().toISOString(),
         })
         .eq('id', id)
+        .eq('status', 'pending')
+        .select()
 
-      if (!error) {
-        toast.success('Withdrawal rejected, tokens refunded')
-        loadWithdrawals()
+      if (error || !updated?.length) {
+        return toast.error('Could not reject — it may already be processed')
       }
+
+      // Now refund tokens; if this fails, surface it so it can be retried manually
+      const { error: refundError } = await supabase.rpc('refund_tokens', {
+        p_user_id: request.user_id,
+        p_amount: request.tokens_amount,
+        p_reason: `Withdrawal rejected: ${reason}`,
+      })
+      if (refundError) {
+        toast.error('Marked rejected, but refund failed — refund manually')
+      } else {
+        toast.success('Withdrawal rejected, tokens refunded')
+      }
+      loadWithdrawals()
     }
   }
 

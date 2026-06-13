@@ -4,7 +4,7 @@ import {
   RiHome4Line, RiCompassLine, RiUploadCloud2Line,
   RiTrophyLine, RiFlashlightLine, RiMenuLine, RiCloseLine,
   RiMoonLine, RiSunLine, RiWalletLine, RiDashboardLine,
-  RiLogoutBoxLine, RiUserLine,
+  RiLogoutBoxLine, RiUserLine, RiShieldLine,
 } from 'react-icons/ri'
 import { Avatar, TokenChip } from '../common'
 import useAuthStore from '../../store/authStore'
@@ -111,6 +111,12 @@ export default function Navbar() {
                           className="flex items-center gap-2 px-3 py-2 rounded-xl text-sm text-gray-700 dark:text-gray-300 hover:bg-brand-50 dark:hover:bg-brand-950 transition-colors">
                           <RiWalletLine size={15} /> Wallet
                         </Link>
+                        {profile?.role === 'admin' && (
+                          <Link to="/admin" onClick={() => setUserMenuOpen(false)}
+                            className="flex items-center gap-2 px-3 py-2 rounded-xl text-sm text-brand-600 dark:text-brand-400 hover:bg-brand-50 dark:hover:bg-brand-950 transition-colors">
+                            <RiShieldLine size={15} /> Admin Panel
+                          </Link>
+                        )}
                         <div className="border-t border-gray-100 dark:border-gray-800 mt-1 pt-1">
                           <button onClick={handleLogout}
                             className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-sm text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors">
@@ -162,6 +168,12 @@ export default function Navbar() {
                   className="flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-medium text-gray-600 dark:text-gray-400">
                   <RiWalletLine size={16} /> Wallet
                 </Link>
+                {profile?.role === 'admin' && (
+                  <Link to="/admin" onClick={() => setMobileOpen(false)}
+                    className="flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-medium text-brand-600 dark:text-brand-400">
+                    <RiShieldLine size={16} /> Admin Panel
+                  </Link>
+                )}
                 <button onClick={handleLogout}
                   className="w-full flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-medium text-red-500">
                   <RiLogoutBoxLine size={16} /> Logout

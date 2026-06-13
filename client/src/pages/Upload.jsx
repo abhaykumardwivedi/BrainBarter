@@ -79,7 +79,7 @@ export default function Upload() {
       const fileName = `${user.id}/${Date.now()}.${fileExt}`
       
       setProgress(30)
-      const { data: fileData, error: fileError } = await supabase.storage
+      const { error: fileError } = await supabase.storage
         .from('content')
         .upload(fileName, file, { cacheControl: '3600', upsert: false })
 
@@ -220,6 +220,7 @@ export default function Upload() {
               <div>
                 <label className="input-label">Topic</label>
                 <select name="topic" className="input" value={form.topic} onChange={handle}>
+                  <option value="">Select topic</option>
                   {topics.map(t => <option key={t}>{t}</option>)}
                 </select>
                 {form.topic === 'Other' && (

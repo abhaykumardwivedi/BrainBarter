@@ -3,6 +3,7 @@ const variants = {
   secondary: 'btn-secondary',
   ghost:     'btn-ghost',
   danger:    'btn-danger',
+  outline:   'btn border-2 bg-transparent',
 }
 const sizes = {
   sm: 'btn-sm',
