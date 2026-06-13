@@ -20,6 +20,7 @@ import NotFound         from './pages/NotFound'
 import useThemeStore    from './store/themeStore'
 import useAuthStore     from './store/authStore'
 import { supabase }     from './lib/supabase'
+import FeedbackButton   from './components/FeedbackButton'
 
 export default function App() {
   const { init } = useThemeStore()
@@ -65,12 +66,13 @@ export default function App() {
           </Routes>
         </main>
         <Footer />
+        <FeedbackButton />
         <Toaster
           position="bottom-right"
           toastOptions={{
             className: 'card text-sm',
             style: { borderRadius: '12px', padding: '12px 16px' },
-            success: { iconTheme: { primary: '#7c3aed', secondary: '#fff' } },
+            success: { iconTheme: { primary: '#9d4edd', secondary: '#fff' } },
           }}
         />
       </div>
