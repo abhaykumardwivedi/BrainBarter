@@ -159,44 +159,33 @@ export default function Wallet() {
     setProcessing(true)
 
     try {
-      const { error } = await supabase.from('withdrawal_requests').insert({
-        user_id: profile.id,
-        tokens_amount: tokens,
-        inr_amount: inrAmount.toFixed(2),
-        method,
-        ...(method === 'bank' ? {
-          bank_name: bankDetails.name,
-          account_number: bankDetails.account,
-          ifsc_code: bankDetails.ifsc,
-          account_holder: bankDetails.holder,
-        } : { upi_id: upiId }),
+      const { error } = await supabase.rpc('request_withdrawal', {
+        p_tokens: tokens,
+        p_method: method,
+        p_inr: parseFloat(inrAmount.toFixed(2)),
+        p_upi: method === 'upi' ? upiId : null,
+        p_bank_name: method === 'bank' ? bankDetails.name : null,
+        p_account: method === 'bank' ? bankDetails.account : null,
+        p_ifsc: method === 'bank' ? bankDetails.ifsc : null,
+        p_holder: method === 'bank' ? bankDetails.holder : null,
       })
 
       if (error) throw error
 
-      // Deduct tokens immediately (will be refunded if rejected)
-      const { data } = await supabase
-        .from('profiles')
-        .update({ token_balance: profile.token_balance - tokens })
-        .eq('id', profile.id)
-        .select()
-        .single()
-
-      await supabase.from('token_transactions').insert({
-        user_id: profile.id,
-        type: 'spend',
-        amount: tokens,
-        reason: `Withdrawal request: ₹${inrAmount.toFixed(2)}`,
-      })
-
-      setProfile(data)
+      setProfile({ ...profile, token_balance: profile.token_balance - tokens })
       toast.success('Withdrawal request submitted! Will be processed in 2-3 days.')
       setWithdrawModal(false)
       setAmount('')
       setBankDetails({ name: '', account: '', ifsc: '', holder: '' })
       setUpiId('')
+      const { data: txns } = await supabase
+        .from('token_transactions')
+        .select('*')
+        .eq('user_id', profile.id)
+        .order('created_at', { ascending: false })
+      setTransactions(txns || [])
     } catch (err) {
-      toast.error('Withdrawal request failed')
+      toast.error(err.message || 'Withdrawal request failed')
     } finally {
       setProcessing(false)
     }
