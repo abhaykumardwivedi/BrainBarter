@@ -15,6 +15,15 @@ export default function Login() {
 
   const handle = e => setForm(f => ({ ...f, [e.target.name]: e.target.value }))
 
+  const handleForgotPassword = async () => {
+    if (!form.email) return toast.error('Enter your email above first')
+    const { error } = await supabase.auth.resetPasswordForEmail(form.email, {
+      redirectTo: `${window.location.origin}/login`,
+    })
+    if (error) return toast.error(error.message)
+    toast.success('Password reset link sent! Check your email.')
+  }
+
   const submit = async e => {
     e.preventDefault()
     setLoading(true)
@@ -80,7 +89,10 @@ export default function Login() {
             </div>
 
             <div className="flex justify-end">
-              <a href="#" className="text-xs text-brand-600 hover:underline dark:text-brand-400">Forgot password?</a>
+              <button type="button" onClick={handleForgotPassword}
+                className="text-xs text-brand-600 hover:underline dark:text-brand-400">
+                Forgot password?
+              </button>
             </div>
 
             <Button type="submit" loading={loading} className="w-full">

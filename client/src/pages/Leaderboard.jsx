@@ -18,7 +18,7 @@ export default function Leaderboard() {
     setLoading(true)
     let query = supabase
       .from('token_transactions')
-      .select('user_id')
+      .select('user_id, amount')
     
     const now = new Date()
     if (period === 'week') {
@@ -31,7 +31,7 @@ export default function Leaderboard() {
       .then(async ({ data: txns }) => {
         const userEarnings = {}
         txns.forEach(t => {
-          userEarnings[t.user_id] = (userEarnings[t.user_id] || 0) + 1
+          userEarnings[t.user_id] = (userEarnings[t.user_id] || 0) + (t.amount || 0)
         })
         const userIds = Object.keys(userEarnings).sort((a, b) => userEarnings[b] - userEarnings[a]).slice(0, 10)
         

@@ -53,13 +53,13 @@ export default function ContentPage() {
 
     if (!user) return
     // Check unlock
-    supabase.from('unlocks').select('id').eq('user_id', user.id).eq('content_id', id).single()
+    supabase.from('unlocks').select('id').eq('user_id', user.id).eq('content_id', id).maybeSingle()
       .then(({ data }) => { if (data) setUnlocked(true) })
     // Check bookmark
-    supabase.from('bookmarks').select('id').eq('user_id', user.id).eq('content_id', id).single()
+    supabase.from('bookmarks').select('id').eq('user_id', user.id).eq('content_id', id).maybeSingle()
       .then(({ data }) => { if (data) setBookmarked(true) })
     // Check rating
-    supabase.from('ratings').select('stars').eq('user_id', user.id).eq('content_id', id).single()
+    supabase.from('ratings').select('stars').eq('user_id', user.id).eq('content_id', id).maybeSingle()
       .then(({ data }) => { if (data) setUserRating(data.stars) })
   }, [id, user])
 
