@@ -22,24 +22,24 @@ function AIResponseBox({ loading, response, placeholder }) {
     return (
       <div className="card-inset min-h-48 flex items-center justify-center">
         <div className="flex flex-col items-center gap-3">
-          <div className="w-8 h-8 border-2 border-exam-900 border-t-exam-500 rounded-full animate-spin" />
-          <p className="text-sm text-exam-300/80 animate-pulse-slow">Gemini is thinking...</p>
+          <div className="w-8 h-8 border-2 border-red-900 border-t-red-500 rounded-full animate-spin" />
+          <p className="text-sm text-red-400/80 animate-pulse-slow">Gemini is thinking...</p>
         </div>
       </div>
     )
   }
   if (!response) {
     return (
-      <div className="min-h-48 flex items-center justify-center text-center rounded-2xl bg-black/30 border border-exam-900/40">
+      <div className="min-h-48 flex items-center justify-center text-center rounded-2xl bg-red-950/20 border border-red-900/50">
         <div>
-          <RiSparklingLine size={32} className="text-exam-500/60 mx-auto mb-2" />
+          <RiSparklingLine size={32} className="text-red-500/70 mx-auto mb-2" />
           <p className="text-sm text-gray-400 dark:text-gray-500">{placeholder}</p>
         </div>
       </div>
     )
   }
   return (
-    <div className="min-h-48 rounded-2xl bg-black/30 border border-exam-900/40 p-5 prose prose-sm prose-invert max-w-none animate-fade-in">
+    <div className="min-h-48 rounded-2xl bg-red-950/20 border border-red-900/50 p-5 prose prose-sm prose-invert max-w-none animate-fade-in">
       <pre className="whitespace-pre-wrap text-sm text-gray-200 font-sans">{response}</pre>
     </div>
   )
@@ -91,7 +91,7 @@ export default function ExamMode() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-[#1a0606] via-[#120303] to-black">
+    <div className="min-h-screen bg-gradient-to-b from-[#2a0000] via-[#1a0000] to-[#0d0000]">
       <div className="container-app py-8 max-w-4xl">
 
         {/* Header */}
@@ -107,7 +107,7 @@ export default function ExamMode() {
         </div>
 
         {/* Disclaimer */}
-        <div className="flex items-start gap-2 mb-6 p-3 rounded-xl border border-exam-900/60 bg-exam-950/40">
+        <div className="flex items-start gap-2 mb-6 p-3 rounded-xl border border-exam-900/60 bg-red-950/60">
           <RiSparklingLine size={16} className="text-exam-400 mt-0.5 shrink-0" />
           <p className="text-xs text-exam-300/80">
             AI-generated content. Use as a study aid — always verify with your syllabus and textbooks before exams.
@@ -115,7 +115,7 @@ export default function ExamMode() {
         </div>
 
         {/* Tabs */}
-        <div className="flex gap-1 p-1 mb-6 rounded-xl bg-black/40 border border-exam-900/40">
+        <div className="flex gap-1 p-1 mb-6 rounded-xl bg-red-950/30 border border-red-900/50">
           {tabs.map(({ id, label, icon: Icon }) => (
             <button
               key={id}
@@ -135,7 +135,7 @@ export default function ExamMode() {
         </div>
 
         {/* Controls */}
-        <div className="rounded-2xl bg-black/40 border border-exam-900/40 p-6 mb-6">
+        <div className="rounded-2xl bg-red-950/30 border border-red-900/50 p-6 mb-6">
           <div className="grid sm:grid-cols-2 gap-4 mb-4">
             <div>
               <label className="block text-sm font-medium text-exam-200 mb-1.5">Subject</label>
@@ -160,7 +160,7 @@ export default function ExamMode() {
         </div>
 
         {/* Response */}
-        <div className="rounded-2xl bg-black/40 border border-exam-900/40 p-6">
+        <div className="rounded-2xl bg-red-950/30 border border-red-900/50 p-6">
           <div className="flex items-center justify-between mb-4">
             <h3 className="font-display font-semibold text-white">
               {tabs.find(t => t.id === activeTab)?.label}
