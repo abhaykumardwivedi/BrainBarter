@@ -31,7 +31,7 @@ export default function App() {
       if (session?.user) {
         setUser(session.user)
         const { data: profile } = await supabase
-          .from('profiles').select('*').eq('id', session.user.id).single()
+          .from('profiles').select('*').eq('id', session.user.id).maybeSingle()
         setProfile(profile)
       }
       setLoading(false)
