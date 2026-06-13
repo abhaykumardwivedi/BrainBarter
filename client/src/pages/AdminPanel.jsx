@@ -14,24 +14,6 @@ const tabs = [
   { id: 'content',     label: 'Content Moderation' },
 ]
 
-const mockReports = [
-  { id: 1, content: 'Normalization — 1NF to BCNF', reason: 'Incorrect content', reporter: 'user_a', status: 'pending' },
-  { id: 2, content: 'ER Diagram Notes',            reason: 'Low quality',       reporter: 'user_b', status: 'pending' },
-  { id: 3, content: 'TCP/IP Deep Dive',            reason: 'Duplicate content', reporter: 'user_c', status: 'reviewed'},
-]
-
-const mockCreators = [
-  { id: 1, name: 'Aryan Sharma',  username: 'aryan_s',  uploads: 18, verified: true  },
-  { id: 2, name: 'Priya Mehta',   username: 'priya_m',  uploads: 14, verified: false },
-  { id: 3, name: 'Rahul Kumar',   username: 'rahul_k',  uploads: 11, verified: false },
-]
-
-const mockContent = [
-  { id: 1, title: 'Normalization — 1NF to BCNF', creator: 'aryan_s', published: true  },
-  { id: 2, title: 'ER Diagram Notes',            creator: 'priya_m', published: true  },
-  { id: 3, title: 'SQL Cheatsheet',              creator: 'rahul_k', published: false },
-]
-
 export default function AdminPanel() {
   const [activeTab, setActiveTab] = useState('withdrawals')
   const [withdrawals, setWithdrawals] = useState([])
