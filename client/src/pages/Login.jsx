@@ -77,9 +77,8 @@ export default function Login() {
     <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-[#0f0a1e] p-4">
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
-          <div className="w-12 h-12 rounded-2xl bg-gradient-brand flex items-center justify-center shadow-glow mx-auto mb-3">
-            <span className="text-white font-display font-bold text-lg">B</span>
-          </div>
+          <img src="/logo-mark.svg" alt="BrainBarter"
+            className="w-14 h-14 mx-auto mb-3 drop-shadow-[0_0_16px_rgba(157,78,221,0.55)]" />
           <h1 className="text-2xl font-display font-bold text-gray-900 dark:text-white">Set New Password</h1>
           <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Enter a new password for your account</p>
         </div>
@@ -114,9 +113,8 @@ export default function Login() {
 
       <div className="w-full max-w-md relative animate-slide-up">
         <div className="text-center mb-8">
-          <div className="w-12 h-12 rounded-2xl bg-gradient-brand flex items-center justify-center shadow-glow mx-auto mb-3">
-            <span className="text-white font-display font-bold text-lg">B</span>
-          </div>
+          <img src="/logo-mark.svg" alt="BrainBarter"
+            className="w-14 h-14 mx-auto mb-3 drop-shadow-[0_0_16px_rgba(157,78,221,0.55)]" />
           <h1 className="text-2xl font-display font-bold text-gray-900 dark:text-white">Welcome back</h1>
           <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Sign in to continue learning</p>
         </div>

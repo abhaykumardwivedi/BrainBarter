@@ -45,11 +45,10 @@ export default function Navbar() {
 
           {/* Logo */}
           <Link to="/" className="flex items-center gap-2.5 group">
-            <div className="w-8 h-8 rounded-xl bg-gradient-brand flex items-center justify-center shadow-glow group-hover:shadow-glow-lg transition-all">
-              <span className="text-white font-display font-bold text-sm">B</span>
-            </div>
+            <img src="/logo-mark.svg" alt="BrainBarter"
+              className="w-9 h-9 drop-shadow-[0_0_10px_rgba(157,78,221,0.5)] group-hover:drop-shadow-[0_0_16px_rgba(157,78,221,0.7)] transition-all" />
             <span className="font-display font-bold text-lg text-gray-900 dark:text-white">
-              Brain<span className="text-brand-600">Barter</span>
+              Brain<span className="text-brand-500">Barter</span>
             </span>
           </Link>
 

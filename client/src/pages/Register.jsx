@@ -121,9 +121,8 @@ export default function Register() {
 
       <div className="w-full max-w-md relative animate-slide-up">
         <div className="text-center mb-8">
-          <div className="w-12 h-12 rounded-2xl bg-gradient-brand flex items-center justify-center shadow-glow mx-auto mb-3">
-            <span className="text-white font-display font-bold text-lg">B</span>
-          </div>
+          <img src="/logo-mark.svg" alt="BrainBarter"
+            className="w-14 h-14 mx-auto mb-3 drop-shadow-[0_0_16px_rgba(157,78,221,0.55)]" />
           <h1 className="text-2xl font-display font-bold text-gray-900 dark:text-white">
             {step === 1 ? 'Create your account' : 'Verify your email'}
           </h1>
