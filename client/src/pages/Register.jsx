@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { RiMailLine, RiLockLine, RiUserLine, RiArrowRightLine, RiShieldCheckLine } from 'react-icons/ri'
 import { Button, Input } from '../components/common'
@@ -12,26 +12,48 @@ export default function Register() {
   const [errors, setErrors] = useState({})
   const [step, setStep] = useState(1) // 1: form, 2: verify code
   const [code, setCode] = useState('')
+  const [resendIn, setResendIn] = useState(0) // seconds until resend allowed
   const { setUser, setProfile } = useAuthStore()
   const navigate = useNavigate()
 
   const handle = e => setForm(f => ({ ...f, [e.target.name]: e.target.value }))
 
-  const sendCode = async e => {
-    e.preventDefault()
-    
-    // Validate
-    const newErrors = {}
-    if (form.username.length < 3) newErrors.username = 'Min 3 characters'
-    if (!form.email.includes('@')) newErrors.email = 'Invalid email'
-    if (form.password.length < 8) newErrors.password = 'Min 8 characters'
-    
-    if (Object.keys(newErrors).length > 0) {
-      setErrors(newErrors)
-      return
+  // Countdown timer for the resend button
+  useEffect(() => {
+    if (resendIn <= 0) return
+    const t = setInterval(() => setResendIn(s => s - 1), 1000)
+    return () => clearInterval(t)
+  }, [resendIn])
+
+  // Password policy: 8+ chars, upper, lower, number, special character
+  const validatePassword = pw => {
+    if (pw.length < 8) return 'Min 8 characters'
+    if (!/[A-Z]/.test(pw)) return 'Add an uppercase letter'
+    if (!/[a-z]/.test(pw)) return 'Add a lowercase letter'
+    if (!/[0-9]/.test(pw)) return 'Add a number'
+    if (!/[^A-Za-z0-9]/.test(pw)) return 'Add a special character'
+    return null
+  }
+
+  // Sends/resends the verification email. Skips form validation when resending.
+  const sendCode = async (e, isResend = false) => {
+    if (e) e.preventDefault()
+
+    if (!isResend) {
+      // Validate
+      const newErrors = {}
+      if (form.username.length < 3) newErrors.username = 'Min 3 characters'
+      if (!form.email.includes('@')) newErrors.email = 'Invalid email'
+      const pwError = validatePassword(form.password)
+      if (pwError) newErrors.password = pwError
+
+      if (Object.keys(newErrors).length > 0) {
+        setErrors(newErrors)
+        return
+      }
+      setErrors({})
     }
-    
-    setErrors({})
+
     setLoading(true)
     try {
       const res = await fetch(`${import.meta.env.VITE_API_URL}/api/auth/send-verification`, {
@@ -40,8 +62,9 @@ export default function Register() {
         body: JSON.stringify({ email: form.email }),
       })
       if (!res.ok) throw new Error('Failed to send verification code')
-      toast.success('Verification code sent to your email!')
+      toast.success(isResend ? 'New code sent!' : 'Verification code sent to your email!')
       setStep(2)
+      setResendIn(30) // 30s cooldown before allowing another resend
     } catch (err) {
       toast.error(err.message || 'Failed to send code')
     } finally {
@@ -134,7 +157,7 @@ export default function Register() {
                   error={errors.email} required
                 />
                 <Input
-                  label="Password" name="password" type="password" placeholder="Min 8 characters"
+                  label="Password" name="password" type="password" placeholder="8+ chars, A-z, 0-9, symbol"
                   icon={RiLockLine} value={form.password} onChange={handle}
                   error={errors.password} required
                 />
@@ -164,6 +187,14 @@ export default function Register() {
                 <Button type="submit" loading={loading} className="w-full">
                   Verify & Create Account <RiArrowRightLine size={16} />
                 </Button>
+                <button
+                  type="button"
+                  disabled={resendIn > 0 || loading}
+                  onClick={() => sendCode(null, true)}
+                  className="w-full text-sm font-medium text-brand-600 hover:underline disabled:text-gray-400 disabled:no-underline disabled:cursor-not-allowed dark:text-brand-400 dark:disabled:text-gray-500"
+                >
+                  {resendIn > 0 ? `Resend code in ${resendIn}s` : 'Resend code'}
+                </button>
                 <button
                   type="button"
                   onClick={() => setStep(1)}
