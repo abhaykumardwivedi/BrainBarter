@@ -7,9 +7,28 @@
 --   • credit_purchase  (token purchase — REQUIRED by payment flow)
 --   • request_withdrawal, rate_content (run in-session, now versioned)
 --   • increment_views
+--   • email_verification_codes (survives server restarts; used by authController)
 -- Run AFTER supabase_schema.sql.  Run order does not matter much
 -- because every statement is guarded with if-not-exists / replace.
 -- ============================================================
+
+-- ============= EMAIL VERIFICATION CODES =============
+-- Replaces in-memory Map in authController — survives server cold-starts.
+-- authController upserts on email (one pending code per address at a time).
+-- verifyCode deletes on success; row is also auto-deleted after 10 minutes
+-- by a scheduled job or by the next upsert (TTL enforced in application logic).
+create table if not exists email_verification_codes (
+  email      text primary key,
+  code       text not null,
+  expires_at timestamptz not null,
+  created_at timestamptz default now()
+);
+
+-- Only the server (service_role) touches this table — no RLS needed for clients
+alter table email_verification_codes enable row level security;
+drop policy if exists "No client access to verification codes" on email_verification_codes;
+create policy "No client access to verification codes" on email_verification_codes
+  for all using (false); -- blocks all client access; service_role bypasses RLS
 
 -- ============= PROFILES (the table everything references) =============
 create table if not exists profiles (
