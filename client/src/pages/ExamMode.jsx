@@ -3,7 +3,6 @@ import {
   RiFlashlightLine, RiQuestionLine, RiFileTextLine,
   RiListCheck2, RiBookOpenLine, RiSparklingLine,
 } from 'react-icons/ri'
-import { Button, Badge } from '../components/common'
 import { supabase } from '../lib/supabase'
 import useAuthStore from '../store/authStore'
 import toast from 'react-hot-toast'
@@ -23,25 +22,25 @@ function AIResponseBox({ loading, response, placeholder }) {
     return (
       <div className="card-inset min-h-48 flex items-center justify-center">
         <div className="flex flex-col items-center gap-3">
-          <div className="w-8 h-8 border-2 border-brand-200 border-t-brand-600 rounded-full animate-spin" />
-          <p className="text-sm text-gray-500 dark:text-gray-400 animate-pulse-slow">Gemini is thinking...</p>
+          <div className="w-8 h-8 border-2 border-exam-900 border-t-exam-500 rounded-full animate-spin" />
+          <p className="text-sm text-exam-300/80 animate-pulse-slow">Gemini is thinking...</p>
         </div>
       </div>
     )
   }
   if (!response) {
     return (
-      <div className="card-inset min-h-48 flex items-center justify-center text-center">
+      <div className="min-h-48 flex items-center justify-center text-center rounded-2xl bg-black/30 border border-exam-900/40">
         <div>
-          <RiSparklingLine size={32} className="text-brand-300 mx-auto mb-2" />
+          <RiSparklingLine size={32} className="text-exam-500/60 mx-auto mb-2" />
           <p className="text-sm text-gray-400 dark:text-gray-500">{placeholder}</p>
         </div>
       </div>
     )
   }
   return (
-    <div className="card-inset min-h-48 prose prose-sm dark:prose-invert max-w-none animate-fade-in">
-      <pre className="whitespace-pre-wrap text-sm text-gray-700 dark:text-gray-300 font-sans">{response}</pre>
+    <div className="min-h-48 rounded-2xl bg-black/30 border border-exam-900/40 p-5 prose prose-sm prose-invert max-w-none animate-fade-in">
+      <pre className="whitespace-pre-wrap text-sm text-gray-200 font-sans">{response}</pre>
     </div>
   )
 }
@@ -92,77 +91,85 @@ export default function ExamMode() {
   }
 
   return (
-    <div className="page">
+    <div className="min-h-screen bg-gradient-to-b from-[#1a0606] via-[#120303] to-black">
       <div className="container-app py-8 max-w-4xl">
 
         {/* Header */}
         <div className="flex items-center gap-3 mb-8">
-          <div className="w-12 h-12 rounded-2xl bg-gradient-brand flex items-center justify-center shadow-glow">
+          <div className="w-12 h-12 rounded-2xl bg-gradient-exam flex items-center justify-center shadow-glow-exam">
             <RiFlashlightLine size={22} className="text-white" />
           </div>
           <div>
-            <h1 className="section-title">Exam Mode</h1>
-            <p className="section-sub">AI-powered exam preparation — powered by Gemini</p>
+            <h1 className="text-2xl font-display font-bold text-white">Exam Mode</h1>
+            <p className="text-sm text-exam-300/70">AI-powered exam preparation — powered by Gemini</p>
           </div>
-          <Badge variant="amber" className="ml-auto">AI Generated</Badge>
+          <span className="ml-auto text-xs font-medium px-2.5 py-1 rounded-full bg-exam-950 text-exam-300 border border-exam-800">AI Generated</span>
         </div>
 
         {/* Disclaimer */}
-        <div className="card-inset flex items-start gap-2 mb-6 border border-amber-200 dark:border-amber-900 bg-amber-50 dark:bg-amber-950/30">
-          <RiSparklingLine size={16} className="text-amber-500 mt-0.5 shrink-0" />
-          <p className="text-xs text-amber-700 dark:text-amber-400">
+        <div className="flex items-start gap-2 mb-6 p-3 rounded-xl border border-exam-900/60 bg-exam-950/40">
+          <RiSparklingLine size={16} className="text-exam-400 mt-0.5 shrink-0" />
+          <p className="text-xs text-exam-300/80">
             AI-generated content. Use as a study aid — always verify with your syllabus and textbooks before exams.
           </p>
         </div>
 
         {/* Tabs */}
-        <div className="tab-bar mb-6">
+        <div className="flex gap-1 p-1 mb-6 rounded-xl bg-black/40 border border-exam-900/40">
           {tabs.map(({ id, label, icon: Icon }) => (
             <button
               key={id}
               onClick={() => { setActiveTab(id); setResponse('') }}
-              className={activeTab === id ? 'tab-item-active' : 'tab-item'}
+              className={`flex-1 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                activeTab === id
+                  ? 'bg-gradient-exam text-white shadow-glow-exam'
+                  : 'text-exam-300/60 hover:text-exam-200 hover:bg-exam-950/50'
+              }`}
             >
               <span className="hidden sm:inline-flex items-center gap-1.5">
                 <Icon size={14} /> {label}
               </span>
-              <span className="sm:hidden"><Icon size={16} /></span>
+              <span className="sm:hidden flex justify-center"><Icon size={16} /></span>
             </button>
           ))}
         </div>
 
         {/* Controls */}
-        <div className="card mb-6">
+        <div className="rounded-2xl bg-black/40 border border-exam-900/40 p-6 mb-6">
           <div className="grid sm:grid-cols-2 gap-4 mb-4">
             <div>
-              <label className="input-label">Subject</label>
-              <select className="input" value={subject} onChange={e => setSubject(e.target.value)}>
-                {subjects.map(s => <option key={s}>{s}</option>)}
+              <label className="block text-sm font-medium text-exam-200 mb-1.5">Subject</label>
+              <select className="w-full rounded-xl bg-black/50 border border-exam-900/50 text-gray-200 px-3 py-2.5 focus:border-exam-500 focus:outline-none"
+                value={subject} onChange={e => setSubject(e.target.value)}>
+                {subjects.map(s => <option key={s} className="bg-[#1a0606]">{s}</option>)}
               </select>
             </div>
             <div>
-              <label className="input-label">Topic</label>
-              <select className="input" value={topic} onChange={e => setTopic(e.target.value)}>
-                {topics.map(t => <option key={t}>{t}</option>)}
+              <label className="block text-sm font-medium text-exam-200 mb-1.5">Topic</label>
+              <select className="w-full rounded-xl bg-black/50 border border-exam-900/50 text-gray-200 px-3 py-2.5 focus:border-exam-500 focus:outline-none"
+                value={topic} onChange={e => setTopic(e.target.value)}>
+                {topics.map(t => <option key={t} className="bg-[#1a0606]">{t}</option>)}
               </select>
             </div>
           </div>
-          <Button onClick={generate} loading={loading} className="w-full sm:w-auto">
+          <button onClick={generate} disabled={loading}
+            className="inline-flex items-center justify-center gap-1.5 w-full sm:w-auto px-5 py-2.5 rounded-xl bg-gradient-exam text-white font-medium shadow-glow-exam hover:opacity-90 disabled:opacity-60 transition-opacity">
             <RiSparklingLine size={16} />
-            Generate with AI
-          </Button>
+            {loading ? 'Generating…' : 'Generate with AI'}
+          </button>
         </div>
 
         {/* Response */}
-        <div className="card">
+        <div className="rounded-2xl bg-black/40 border border-exam-900/40 p-6">
           <div className="flex items-center justify-between mb-4">
-            <h3 className="font-display font-semibold text-gray-900 dark:text-white">
+            <h3 className="font-display font-semibold text-white">
               {tabs.find(t => t.id === activeTab)?.label}
             </h3>
             {response && (
-              <Button variant="ghost" size="sm" onClick={() => navigator.clipboard.writeText(response)}>
+              <button onClick={() => navigator.clipboard.writeText(response)}
+                className="text-sm text-exam-300 hover:text-exam-200 px-3 py-1.5 rounded-lg hover:bg-exam-950/50 transition-colors">
                 Copy
-              </Button>
+              </button>
             )}
           </div>
           <AIResponseBox
