@@ -154,6 +154,36 @@ create or replace function increment_views(content_id uuid) returns void as $$
 $$ language sql security definer;
 grant execute on function increment_views(uuid) to anon, authenticated;
 
+-- ============= USER FEEDBACK =============
+-- Floating "Feedback" button (client) inserts here. Admin Panel reads it.
+create table if not exists feedback (
+  id         uuid primary key default gen_random_uuid(),
+  user_id    uuid references profiles(id) on delete set null,
+  category   text not null default 'Other',
+  message    text not null,
+  status     text not null default 'new' check (status in ('new', 'reviewed', 'done')),
+  created_at timestamptz default now()
+);
+
+alter table feedback enable row level security;
+
+-- Anyone (logged in or anonymous) may submit feedback
+drop policy if exists "Anyone can submit feedback" on feedback;
+create policy "Anyone can submit feedback" on feedback
+  for insert with check (true);
+
+-- A user can read their own submissions
+drop policy if exists "Users read own feedback" on feedback;
+create policy "Users read own feedback" on feedback
+  for select using (auth.uid() = user_id);
+
+-- Admins can read/update all feedback (Admin Panel)
+drop policy if exists "Admins manage feedback" on feedback;
+create policy "Admins manage feedback" on feedback
+  for all using (
+    exists (select 1 from profiles where id = auth.uid() and role = 'admin')
+  );
+
 -- ============= MAKE brainbarter01@gmail.com ADMIN =============
 update profiles set role = 'admin'
 where id = (select id from auth.users where email = 'brainbarter01@gmail.com');
