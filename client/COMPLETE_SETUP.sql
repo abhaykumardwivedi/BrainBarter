@@ -203,6 +203,53 @@ create policy "Admins manage feedback" on feedback
     exists (select 1 from profiles where id = auth.uid() and role = 'admin')
   );
 
+-- ============= RAG: VECTOR SEARCH OVER UPLOADED CONTENT =============
+-- The AI tutor answers grounded in the actual text of uploaded notes/PDFs.
+-- On upload, the server extracts text, splits it into chunks, embeds each
+-- chunk (Gemini text-embedding-004, 768-dim) and stores it here. At query
+-- time it embeds the student's question and finds the closest chunks.
+create extension if not exists vector;
+
+create table if not exists content_chunks (
+  id          bigserial primary key,
+  content_id  uuid references content(id) on delete cascade,
+  chunk_index int  not null,
+  chunk_text  text not null,
+  embedding   vector(768),
+  created_at  timestamptz default now()
+);
+
+create index if not exists content_chunks_content_id_idx
+  on content_chunks (content_id);
+-- Approximate-nearest-neighbour index for fast cosine similarity search
+create index if not exists content_chunks_embedding_idx
+  on content_chunks using ivfflat (embedding vector_cosine_ops) with (lists = 100);
+
+-- Only the server (service_role) reads/writes chunks; clients go through the API
+alter table content_chunks enable row level security;
+drop policy if exists "No client access to chunks" on content_chunks;
+create policy "No client access to chunks" on content_chunks
+  for all using (false);
+
+-- Semantic search: closest chunks of ONE content item to a query embedding.
+-- similarity = 1 - cosine_distance (higher = more relevant).
+create or replace function match_content_chunks(
+  p_content_id uuid,
+  query_embedding vector(768),
+  match_count int default 6
+)
+returns table (chunk_text text, chunk_index int, similarity float)
+language sql stable as $$
+  select chunk_text,
+         chunk_index,
+         1 - (embedding <=> query_embedding) as similarity
+  from content_chunks
+  where content_id = p_content_id
+  order by embedding <=> query_embedding
+  limit match_count;
+$$;
+grant execute on function match_content_chunks(uuid, vector, int) to service_role, authenticated;
+
 -- ============= MAKE brainbarter01@gmail.com ADMIN =============
 update profiles set role = 'admin'
 where id = (select id from auth.users where email = 'brainbarter01@gmail.com');

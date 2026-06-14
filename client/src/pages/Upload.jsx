@@ -106,7 +106,7 @@ export default function Upload() {
 
       setProgress(80)
 
-      const { error: dbError } = await supabase.from('content').insert({
+      const { data: inserted, error: dbError } = await supabase.from('content').insert({
         creator_id: user.id,
         title: form.title,
         description: form.description,
@@ -121,12 +121,25 @@ export default function Upload() {
         subject_id: subjectId,
         subject_name: finalSubject,
         topic_name: finalTopic,
-      })
+      }).select('id').single()
       if (dbError) throw dbError
 
       setProgress(100)
+
+      // Index the content for the AI tutor (RAG). Fire-and-forget — extracting
+      // and embedding a PDF can take a few seconds; the upload itself is done.
+      if (inserted?.id) {
+        supabase.auth.getSession().then(({ data: { session } }) => {
+          fetch(`${import.meta.env.VITE_API_URL}/api/ai/ingest`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session?.access_token}` },
+            body: JSON.stringify({ contentId: inserted.id }),
+          }).catch(() => {})
+        })
+      }
+
       setDone(true)
-      toast.success('Content uploaded successfully!')
+      toast.success('Content uploaded! Indexing it for the AI tutor…')
     } catch (err) {
       console.error(err)
       toast.error(err.message || 'Upload failed')
