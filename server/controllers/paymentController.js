@@ -44,6 +44,7 @@ async function verifyPayment(req, res) {
       return res.status(400).json({ error: 'Missing payment fields' })
     }
 
+    // HMAC-SHA256: recompute the signature server-side and compare with Razorpay's
     const expected = crypto
       .createHmac('sha256', process.env.RAZORPAY_KEY_SECRET)
       .update(`${razorpay_order_id}|${razorpay_payment_id}`)
@@ -61,6 +62,7 @@ async function verifyPayment(req, res) {
     const tokens = parseInt(order.notes?.tokens, 10)
     const inr = order.notes?.inr || ''
 
+    // RPC handles balance update + transaction record atomically; idempotent on payment_id
     const { data: balance, error } = await supabase.rpc('credit_purchase', {
       p_user_id: req.user.id,
       p_tokens: tokens,

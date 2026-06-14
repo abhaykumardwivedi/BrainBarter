@@ -2,7 +2,7 @@ const { GoogleGenerativeAI } = require('@google/generative-ai')
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY)
 
-const EMBED_MODEL = 'text-embedding-004'
+const EMBED_MODEL = 'text-embedding-004'  // 768-dim vectors, same model for index + query
 const EMBED_DIM = 768
 
 async function embedText(text) {
@@ -17,6 +17,7 @@ async function embedBatch(texts) {
   return out
 }
 
+// overlap prevents key sentences from being split across chunk boundaries
 function chunkText(text, size = 220, overlap = 40) {
   const words = text.replace(/\s+/g, ' ').trim().split(' ')
   if (words.length === 0) return []
