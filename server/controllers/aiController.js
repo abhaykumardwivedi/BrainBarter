@@ -3,13 +3,8 @@ const { callGemini } = require('../utils/gemini')
 const { embedText, chunkText } = require('../utils/embeddings')
 const { supabase }   = require('../middleware/verifyToken')
 
-// Tasks that benefit from semantic retrieval of a specific question.
 const RETRIEVAL_TASKS = new Set(['doubt'])
 
-// ---------------------------------------------------------------------------
-// INGESTION: extract text from an uploaded file, chunk it, embed each chunk,
-// and store the vectors. Called once after a successful upload (idempotent).
-// ---------------------------------------------------------------------------
 async function ingestContent(req, res) {
   const { contentId } = req.body
   if (!contentId) return res.status(400).json({ error: 'contentId is required' })
@@ -22,15 +17,12 @@ async function ingestContent(req, res) {
       .maybeSingle()
 
     if (!content) return res.status(404).json({ error: 'Content not found' })
-    // Only the creator may trigger ingestion for their own content
     if (content.creator_id !== req.user.id) {
       return res.status(403).json({ error: 'Not your content' })
     }
 
-    // Always index title + description so every item is at least minimally searchable
     let fullText = `${content.title}\n${content.description || ''}`
 
-    // For notes/PDFs, download the file and extract its text
     const looksLikePdf = content.file_url && /\.pdf(\?|$)/i.test(content.file_url)
     if (looksLikePdf) {
       try {
@@ -48,10 +40,8 @@ async function ingestContent(req, res) {
     const chunks = chunkText(fullText)
     if (chunks.length === 0) return res.json({ chunks: 0 })
 
-    // Re-ingest cleanly: drop any previous chunks for this content
     await supabase.from('content_chunks').delete().eq('content_id', contentId)
 
-    // Embed + insert chunk by chunk
     let inserted = 0
     for (let i = 0; i < chunks.length; i++) {
       const embedding = await embedText(chunks[i])
@@ -71,11 +61,6 @@ async function ingestContent(req, res) {
   }
 }
 
-// ---------------------------------------------------------------------------
-// ASSIST: now Retrieval-Augmented. For a doubt, we semantically retrieve the
-// most relevant chunks of the actual uploaded material and answer grounded in
-// them (returning citations). For other tasks, we feed the full indexed text.
-// ---------------------------------------------------------------------------
 async function assist(req, res) {
   const { taskType, contentId, userMessage } = req.body
   if (!taskType) return res.status(400).json({ error: 'taskType is required' })
@@ -85,9 +70,7 @@ async function assist(req, res) {
     let citations = []
 
     if (contentId && RETRIEVAL_TASKS.has(taskType) && userMessage) {
-      // 1. Embed the student's question
       const queryEmbedding = await embedText(userMessage)
-      // 2. Semantic search over THIS content's chunks
       const { data: matches } = await supabase.rpc('match_content_chunks', {
         p_content_id: contentId,
         query_embedding: queryEmbedding,
@@ -102,7 +85,6 @@ async function assist(req, res) {
         }))
       }
     } else if (contentId) {
-      // Non-doubt tasks: use the full indexed text (ordered chunks)
       const { data: chunks } = await supabase
         .from('content_chunks')
         .select('chunk_text, chunk_index')
@@ -114,7 +96,6 @@ async function assist(req, res) {
       }
     }
 
-    // Fallback: not indexed yet → use title/description (old behavior)
     if (!contentText && contentId) {
       const { data } = await supabase
         .from('content').select('title, description').eq('id', contentId).maybeSingle()

@@ -7,11 +7,9 @@ const razorpay = new Razorpay({
   key_secret: process.env.RAZORPAY_KEY_SECRET,
 })
 
-const CONVERSION_RATE = 10 // ₹1 = 10 tokens (must match client)
+const CONVERSION_RATE = 10
 const MIN_INR = 10
 
-// Create a Razorpay order. The token amount is computed here and stored in the
-// order notes so the client can never tamper with how many tokens a payment buys.
 async function createOrder(req, res) {
   try {
     const inr = parseInt(req.body.amount, 10)
@@ -21,7 +19,7 @@ async function createOrder(req, res) {
 
     const tokens = inr * CONVERSION_RATE
     const order = await razorpay.orders.create({
-      amount: inr * 100, // paise
+      amount: inr * 100,
       currency: 'INR',
       receipt: `bb_${Date.now()}`,
       notes: { user_id: req.user.id, tokens: String(tokens), inr: String(inr) },
@@ -31,7 +29,7 @@ async function createOrder(req, res) {
       orderId: order.id,
       amount: order.amount,
       currency: order.currency,
-      keyId: process.env.RAZORPAY_KEY_ID, // public key — safe to send to client
+      keyId: process.env.RAZORPAY_KEY_ID,
     })
   } catch (err) {
     console.error('createOrder error:', err.message)
@@ -39,8 +37,6 @@ async function createOrder(req, res) {
   }
 }
 
-// Verify the payment signature, then credit tokens server-side. The token count
-// comes from the order we created — never from the client.
 async function verifyPayment(req, res) {
   try {
     const { razorpay_order_id, razorpay_payment_id, razorpay_signature } = req.body
@@ -48,7 +44,6 @@ async function verifyPayment(req, res) {
       return res.status(400).json({ error: 'Missing payment fields' })
     }
 
-    // 1. Verify the HMAC signature — proves the payment is authentic and unmodified
     const expected = crypto
       .createHmac('sha256', process.env.RAZORPAY_KEY_SECRET)
       .update(`${razorpay_order_id}|${razorpay_payment_id}`)
@@ -58,7 +53,6 @@ async function verifyPayment(req, res) {
       return res.status(400).json({ error: 'Invalid payment signature' })
     }
 
-    // 2. Load the order we created and confirm it belongs to this user
     const order = await razorpay.orders.fetch(razorpay_order_id)
     if (order.notes?.user_id !== req.user.id) {
       return res.status(403).json({ error: 'Order does not belong to this user' })
@@ -67,7 +61,6 @@ async function verifyPayment(req, res) {
     const tokens = parseInt(order.notes?.tokens, 10)
     const inr = order.notes?.inr || ''
 
-    // 3. Credit atomically + idempotently (RPC ignores a repeated payment id)
     const { data: balance, error } = await supabase.rpc('credit_purchase', {
       p_user_id: req.user.id,
       p_tokens: tokens,
