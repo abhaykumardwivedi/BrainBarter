@@ -38,6 +38,7 @@ export default function ContentPage() {
   const [aiTab, setAiTab]             = useState('summarize')
   const [aiLoading, setAiLoading]     = useState(false)
   const [aiResponse, setAiResponse]   = useState('')
+  const [citations, setCitations]     = useState([])
   const [doubt, setDoubt]             = useState('')
 
   useEffect(() => {
@@ -143,6 +144,7 @@ export default function ContentPage() {
     if (!user) return toast.error('Please login')
     setAiLoading(true)
     setAiResponse('')
+    setCitations([])
     try {
       const { data: { session } } = await supabase.auth.getSession()
       const res = await fetch(`${import.meta.env.VITE_API_URL}/api/ai/assist`, {
@@ -152,6 +154,7 @@ export default function ContentPage() {
       })
       const data = await res.json()
       setAiResponse(data.response || data.error)
+      setCitations(data.citations || [])
     } catch {
       setAiResponse('AI service unavailable. Make sure the server is running.')
     }
@@ -319,6 +322,26 @@ export default function ContentPage() {
                   ) : aiResponse ? (
                     <div className="card-inset animate-fade-in">
                       <pre className="text-xs text-gray-700 dark:text-gray-300 whitespace-pre-wrap font-sans leading-relaxed">{aiResponse}</pre>
+
+                      {/* RAG citations — the actual passages of the uploaded
+                          material the answer was grounded in */}
+                      {citations.length > 0 && (
+                        <div className="mt-3 pt-3 border-t border-gray-200 dark:border-gray-700">
+                          <p className="text-[11px] font-semibold text-gray-500 dark:text-gray-400 mb-1.5 flex items-center gap-1">
+                            <RiSparklingLine size={12} className="text-brand-500" />
+                            Grounded in this material
+                          </p>
+                          <div className="space-y-1.5">
+                            {citations.map(c => (
+                              <div key={c.ref} className="text-[11px] text-gray-500 dark:text-gray-400 flex gap-1.5">
+                                <span className="font-semibold text-brand-600 dark:text-brand-400 shrink-0">[{c.ref}]</span>
+                                <span className="line-clamp-2">{c.snippet}…</span>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
                       <button onClick={() => navigator.clipboard.writeText(aiResponse).then(() => toast.success('Copied!'))}
                         className="btn-ghost btn-sm mt-2 w-full">Copy</button>
                     </div>
