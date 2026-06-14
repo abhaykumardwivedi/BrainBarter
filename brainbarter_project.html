@@ -1,0 +1,994 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<title>BrainBarter — Project Documentation</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+
+  :root {
+    --purple: #7c3aed;
+    --purple-light: #a78bfa;
+    --purple-dark: #5b21b6;
+    --accent: #9d4edd;
+    --red: #dc2626;
+    --green: #16a34a;
+    --blue: #2563eb;
+    --gray-100: #f3f4f6;
+    --gray-200: #e5e7eb;
+    --gray-400: #9ca3af;
+    --gray-600: #4b5563;
+    --gray-700: #374151;
+    --gray-800: #1f2937;
+    --gray-900: #111827;
+    --text: #1a1a2e;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'Inter', 'Segoe UI', system-ui, sans-serif;
+    font-size: 10.5pt;
+    line-height: 1.65;
+    color: var(--text);
+    background: #ffffff;
+  }
+
+  /* ─── PAGE LAYOUT ─── */
+  @page {
+    size: A4;
+    margin: 18mm 18mm 18mm 18mm;
+  }
+  @page :first {
+    margin-top: 0;
+  }
+
+  /* ─── COVER ─── */
+  .cover {
+    page-break-after: always;
+    min-height: 100vh;
+    background: linear-gradient(145deg, #0f0c29, #302b63, #24243e);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: flex-start;
+    padding: 60px 60px 50px 60px;
+    position: relative;
+    overflow: hidden;
+  }
+  .cover::before {
+    content: '';
+    position: absolute;
+    top: -80px; right: -80px;
+    width: 420px; height: 420px;
+    background: radial-gradient(circle, rgba(157,78,221,0.25) 0%, transparent 70%);
+    border-radius: 50%;
+  }
+  .cover::after {
+    content: '';
+    position: absolute;
+    bottom: -60px; left: 60px;
+    width: 300px; height: 300px;
+    background: radial-gradient(circle, rgba(124,58,237,0.18) 0%, transparent 70%);
+    border-radius: 50%;
+  }
+  .cover-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: rgba(157,78,221,0.18);
+    border: 1px solid rgba(157,78,221,0.4);
+    border-radius: 100px;
+    padding: 5px 14px;
+    font-size: 8.5pt;
+    color: #c4b5fd;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    font-weight: 500;
+    margin-bottom: 28px;
+  }
+  .cover-title {
+    font-size: 52pt;
+    font-weight: 700;
+    color: #ffffff;
+    line-height: 1.05;
+    letter-spacing: -1.5px;
+    margin-bottom: 6px;
+  }
+  .cover-title span {
+    background: linear-gradient(90deg, #a78bfa, #9d4edd, #c084fc);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  .cover-tagline {
+    font-size: 14pt;
+    color: rgba(255,255,255,0.65);
+    font-weight: 300;
+    margin-bottom: 48px;
+    max-width: 480px;
+    line-height: 1.5;
+  }
+  .cover-pills {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 52px;
+  }
+  .pill {
+    background: rgba(255,255,255,0.07);
+    border: 1px solid rgba(255,255,255,0.15);
+    border-radius: 100px;
+    padding: 4px 13px;
+    font-size: 8pt;
+    color: rgba(255,255,255,0.75);
+    font-weight: 500;
+    white-space: nowrap;
+  }
+  .pill.accent { background: rgba(157,78,221,0.22); border-color: rgba(157,78,221,0.45); color: #c4b5fd; }
+  .cover-meta {
+    border-top: 1px solid rgba(255,255,255,0.1);
+    padding-top: 24px;
+    width: 100%;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .cover-meta-item { font-size: 8.5pt; color: rgba(255,255,255,0.45); }
+  .cover-meta-item strong { color: rgba(255,255,255,0.75); font-weight: 500; }
+  .cover-url {
+    font-size: 9pt;
+    color: #a78bfa;
+    font-weight: 500;
+  }
+
+  /* ─── CONTENT PAGES ─── */
+  .page-content {
+    padding: 0;
+  }
+
+  /* ─── SECTION HEADERS ─── */
+  .section {
+    margin-bottom: 32px;
+    page-break-inside: avoid;
+  }
+  .section-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 16px;
+    padding-bottom: 10px;
+    border-bottom: 2px solid var(--gray-200);
+  }
+  .section-num {
+    width: 28px; height: 28px;
+    background: linear-gradient(135deg, var(--purple), var(--accent));
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 8.5pt;
+    font-weight: 700;
+    color: white;
+    flex-shrink: 0;
+  }
+  .section-title {
+    font-size: 14pt;
+    font-weight: 700;
+    color: var(--gray-900);
+    letter-spacing: -0.3px;
+  }
+  .section-sub {
+    font-size: 8.5pt;
+    color: var(--gray-400);
+    font-weight: 400;
+    margin-left: 4px;
+  }
+
+  /* ─── INTRO / OVERVIEW ─── */
+  .overview-box {
+    background: linear-gradient(135deg, #faf5ff, #f5f3ff);
+    border: 1px solid #e9d5ff;
+    border-left: 4px solid var(--purple);
+    border-radius: 10px;
+    padding: 18px 20px;
+    margin-bottom: 20px;
+    font-size: 10pt;
+    color: var(--gray-700);
+    line-height: 1.7;
+  }
+
+  /* ─── TWO COLUMN GRID ─── */
+  .grid-2 {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+    margin-bottom: 20px;
+  }
+  .grid-3 {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 12px;
+    margin-bottom: 20px;
+  }
+
+  /* ─── FEATURE CARDS ─── */
+  .card {
+    background: var(--gray-100);
+    border: 1px solid var(--gray-200);
+    border-radius: 10px;
+    padding: 16px;
+  }
+  .card-icon {
+    font-size: 18pt;
+    margin-bottom: 8px;
+    display: block;
+  }
+  .card-title {
+    font-size: 9.5pt;
+    font-weight: 700;
+    color: var(--gray-900);
+    margin-bottom: 6px;
+  }
+  .card p {
+    font-size: 8.5pt;
+    color: var(--gray-600);
+    line-height: 1.6;
+  }
+
+  /* ─── TECH STACK GRID ─── */
+  .tech-card {
+    border: 1px solid var(--gray-200);
+    border-radius: 10px;
+    padding: 14px 16px;
+    background: #fff;
+  }
+  .tech-layer {
+    font-size: 7.5pt;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--purple);
+    margin-bottom: 5px;
+  }
+  .tech-name {
+    font-size: 10pt;
+    font-weight: 700;
+    color: var(--gray-900);
+    margin-bottom: 4px;
+  }
+  .tech-desc {
+    font-size: 8pt;
+    color: var(--gray-600);
+    line-height: 1.5;
+  }
+
+  /* ─── ENGINEERING TABLE ─── */
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 20px;
+    font-size: 9pt;
+  }
+  thead tr {
+    background: linear-gradient(90deg, var(--purple-dark), var(--accent));
+    color: white;
+  }
+  thead th {
+    padding: 10px 13px;
+    text-align: left;
+    font-weight: 600;
+    font-size: 8.5pt;
+    letter-spacing: 0.02em;
+  }
+  thead th:first-child { border-radius: 8px 0 0 0; }
+  thead th:last-child  { border-radius: 0 8px 0 0; }
+  tbody tr:nth-child(even) { background: #faf5ff; }
+  tbody tr:nth-child(odd)  { background: #ffffff; }
+  tbody td {
+    padding: 9px 13px;
+    border-bottom: 1px solid var(--gray-200);
+    vertical-align: top;
+    color: var(--gray-700);
+    line-height: 1.55;
+  }
+  tbody td:first-child { font-weight: 600; color: var(--gray-900); white-space: nowrap; }
+
+  /* ─── CODE BLOCKS ─── */
+  .code-block {
+    background: #0f172a;
+    border-radius: 10px;
+    padding: 16px 18px;
+    margin: 12px 0;
+    overflow: hidden;
+  }
+  .code-block pre {
+    font-family: 'JetBrains Mono', 'Courier New', monospace;
+    font-size: 8pt;
+    color: #e2e8f0;
+    line-height: 1.7;
+    white-space: pre;
+  }
+  .code-comment { color: #64748b; }
+  .code-keyword { color: #c084fc; }
+  .code-string  { color: #86efac; }
+  .code-func    { color: #67e8f9; }
+  .code-var     { color: #fbbf24; }
+
+  /* ─── FLOW DIAGRAM ─── */
+  .flow {
+    display: flex;
+    align-items: stretch;
+    gap: 0;
+    margin: 16px 0 24px;
+    flex-wrap: nowrap;
+  }
+  .flow-step {
+    flex: 1;
+    background: linear-gradient(135deg, #f5f3ff, #faf5ff);
+    border: 1px solid #ddd6fe;
+    border-radius: 10px;
+    padding: 13px 12px;
+    text-align: center;
+    position: relative;
+  }
+  .flow-step::after {
+    content: '→';
+    position: absolute;
+    right: -12px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--purple);
+    font-size: 12pt;
+    font-weight: 700;
+    z-index: 2;
+    background: white;
+    padding: 0 2px;
+  }
+  .flow-step:last-child::after { display: none; }
+  .flow-step-num {
+    font-size: 7pt;
+    font-weight: 700;
+    color: var(--purple);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin-bottom: 4px;
+  }
+  .flow-step-label {
+    font-size: 8pt;
+    font-weight: 600;
+    color: var(--gray-800);
+    line-height: 1.4;
+  }
+
+  /* ─── SECURITY BADGE LIST ─── */
+  .badge-list {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-bottom: 20px;
+  }
+  .badge-list li {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    background: #fff;
+    border: 1px solid var(--gray-200);
+    border-radius: 8px;
+    padding: 10px 13px;
+    font-size: 9pt;
+    color: var(--gray-700);
+    line-height: 1.55;
+  }
+  .badge-list li .icon {
+    flex-shrink: 0;
+    width: 22px; height: 22px;
+    border-radius: 6px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 11pt;
+    margin-top: 0px;
+  }
+  .icon-green  { background: #dcfce7; }
+  .icon-purple { background: #f5f3ff; }
+  .icon-blue   { background: #dbeafe; }
+  .icon-amber  { background: #fef9c3; }
+  .badge-list li strong { color: var(--gray-900); font-weight: 600; }
+
+  /* ─── TOKEN TABLE ─── */
+  .token-table {
+    background: linear-gradient(135deg, #0f172a, #1e1b4b);
+    border-radius: 12px;
+    padding: 20px 22px;
+    color: white;
+    margin-bottom: 20px;
+  }
+  .token-table-title {
+    font-size: 9pt;
+    font-weight: 600;
+    color: #a78bfa;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin-bottom: 14px;
+  }
+  .token-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 0;
+    border-bottom: 1px solid rgba(255,255,255,0.07);
+    font-size: 9pt;
+  }
+  .token-row:last-child { border-bottom: none; }
+  .token-label { color: rgba(255,255,255,0.65); }
+  .token-value { font-weight: 600; color: #c4b5fd; }
+
+  /* ─── CALLOUT ─── */
+  .callout {
+    border-radius: 10px;
+    padding: 13px 16px;
+    margin: 12px 0;
+    display: flex;
+    gap: 10px;
+    align-items: flex-start;
+    font-size: 9pt;
+    line-height: 1.6;
+  }
+  .callout-info    { background: #eff6ff; border: 1px solid #bfdbfe; color: #1e40af; }
+  .callout-success { background: #f0fdf4; border: 1px solid #bbf7d0; color: #166534; }
+  .callout-warn    { background: #fffbeb; border: 1px solid #fde68a; color: #92400e; }
+  .callout-icon { font-size: 12pt; flex-shrink: 0; }
+
+  /* ─── LIST ─── */
+  ul.styled {
+    list-style: none;
+    padding: 0;
+    margin: 0 0 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+  ul.styled li {
+    padding-left: 18px;
+    position: relative;
+    font-size: 9.5pt;
+    color: var(--gray-700);
+    line-height: 1.6;
+  }
+  ul.styled li::before {
+    content: '▸';
+    position: absolute;
+    left: 0;
+    color: var(--purple);
+    font-size: 8pt;
+    top: 2px;
+  }
+  ul.styled li strong { color: var(--gray-900); font-weight: 600; }
+
+  /* ─── INLINE CODE ─── */
+  code {
+    font-family: 'JetBrains Mono', 'Courier New', monospace;
+    font-size: 8pt;
+    background: #f3f0ff;
+    border: 1px solid #e9d5ff;
+    border-radius: 4px;
+    padding: 1px 5px;
+    color: var(--purple-dark);
+  }
+
+  /* ─── PAGE BREAK ─── */
+  .pb { page-break-before: always; padding-top: 8px; }
+
+  /* ─── FOOTER STRIP ─── */
+  .page-footer {
+    position: fixed;
+    bottom: 0; left: 0; right: 0;
+    height: 22px;
+    background: linear-gradient(90deg, var(--purple-dark), var(--accent));
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 18mm;
+  }
+  .page-footer span { font-size: 7pt; color: rgba(255,255,255,0.7); }
+
+  /* ─── RESUME BOX ─── */
+  .resume-box {
+    background: #0f172a;
+    border-radius: 12px;
+    padding: 22px 24px;
+    margin-bottom: 20px;
+  }
+  .resume-box-title {
+    font-size: 8pt;
+    font-weight: 700;
+    color: #64748b;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    margin-bottom: 14px;
+  }
+  .resume-bullet {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 12px;
+    font-size: 9pt;
+    line-height: 1.65;
+    color: #cbd5e1;
+  }
+  .resume-bullet:last-child { margin-bottom: 0; }
+  .rb-dot {
+    width: 7px; height: 7px;
+    border-radius: 50%;
+    background: var(--purple-light);
+    flex-shrink: 0;
+    margin-top: 5px;
+  }
+  .resume-bullet strong { color: #a78bfa; }
+
+  h4 { font-size: 10.5pt; font-weight: 700; color: var(--gray-900); margin: 14px 0 8px; }
+  p { margin-bottom: 10px; font-size: 9.5pt; color: var(--gray-700); line-height: 1.7; }
+
+</style>
+</head>
+<body>
+
+<!-- ═══════════════════════════ COVER ═══════════════════════════ -->
+<div class="cover">
+  <div class="cover-badge">📄 Full Project Documentation</div>
+  <div class="cover-title">Brain<span>Barter</span></div>
+  <div class="cover-tagline">An AI-native peer-to-peer learning marketplace where students monetize knowledge and an AI tutor answers questions grounded in the actual uploaded material.</div>
+  <div class="cover-pills">
+    <span class="pill accent">RAG Pipeline</span>
+    <span class="pill accent">Vector Search</span>
+    <span class="pill accent">Agentic AI</span>
+    <span class="pill">React · Node.js · Express</span>
+    <span class="pill">PostgreSQL · pgvector</span>
+    <span class="pill">Google Gemini API</span>
+    <span class="pill">Razorpay HMAC</span>
+    <span class="pill">Row-Level Security</span>
+    <span class="pill">SendGrid</span>
+    <span class="pill">Supabase</span>
+    <span class="pill">Vercel · Render</span>
+  </div>
+  <div class="cover-meta">
+    <div>
+      <div class="cover-meta-item"><strong>Live App</strong></div>
+      <div class="cover-url">brain-barter-zeta.vercel.app</div>
+    </div>
+    <div>
+      <div class="cover-meta-item"><strong>Type</strong></div>
+      <div class="cover-meta-item">Full-Stack Web Application</div>
+    </div>
+    <div>
+      <div class="cover-meta-item"><strong>Stack</strong></div>
+      <div class="cover-meta-item">React · Express · Supabase · Gemini</div>
+    </div>
+    <div>
+      <div class="cover-meta-item"><strong>Year</strong></div>
+      <div class="cover-meta-item">2025–2026</div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════ PAGE 2 ═══════════════════════════ -->
+<div class="page-content">
+
+  <!-- 1. PROJECT OVERVIEW -->
+  <div class="section">
+    <div class="section-header">
+      <div class="section-num">01</div>
+      <div class="section-title">Project Overview <span class="section-sub">— What is BrainBarter?</span></div>
+    </div>
+    <div class="overview-box">
+      BrainBarter is a student-powered knowledge marketplace built on a token economy: students <strong>earn tokens by uploading</strong> high-quality study material (videos and notes), and <strong>spend tokens to unlock</strong> content created by their peers. Creators can withdraw accumulated earnings directly to a UPI or bank account. Layered on top of this economy is a <strong>Retrieval-Augmented Generation (RAG) AI tutor</strong> — powered by Google Gemini — that reads the actual uploaded PDFs and answers student doubts with citations to the exact passages it used, rather than generating answers from general knowledge.
+    </div>
+    <div class="grid-2">
+      <div class="card">
+        <span class="card-icon">🎓</span>
+        <div class="card-title">For Learners</div>
+        <p>Browse and discover content by subject, topic, type, and difficulty. Unlock material using tokens, rate content, bookmark topics, and track progress. Start with 50 free tokens on signup.</p>
+      </div>
+      <div class="card">
+        <span class="card-icon">🎥</span>
+        <div class="card-title">For Creators</div>
+        <p>Upload videos or PDF notes with subject and topic tags. Earn tokens every time someone unlocks your content. Manage uploads through a creator dashboard. Withdraw earnings to real money.</p>
+      </div>
+      <div class="card">
+        <span class="card-icon">🤖</span>
+        <div class="card-title">AI Study Assistant</div>
+        <p>RAG-powered doubt solver, summarizer, note generator, and practice question engine — all grounded in the student's own uploaded material with inline citations to source passages.</p>
+      </div>
+      <div class="card">
+        <span class="card-icon">🛡️</span>
+        <div class="card-title">Secure by Design</div>
+        <p>HMAC-SHA256 payment verification, atomic SECURITY DEFINER DB functions, Row-Level Security on every table, and cryptographic email OTPs — clients cannot manipulate token balances.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- 2. TECH STACK -->
+  <div class="section">
+    <div class="section-header">
+      <div class="section-num">02</div>
+      <div class="section-title">Technology Stack <span class="section-sub">— Every layer and why</span></div>
+    </div>
+    <div class="grid-3">
+      <div class="tech-card">
+        <div class="tech-layer">Frontend</div>
+        <div class="tech-name">React 19 + Vite</div>
+        <div class="tech-desc">Component-based UI with fast HMR. React Router for SPA navigation, Zustand for lightweight global state (auth + theme), React Hot Toast for notifications.</div>
+      </div>
+      <div class="tech-card">
+        <div class="tech-layer">Styling</div>
+        <div class="tech-name">Tailwind CSS</div>
+        <div class="tech-desc">Utility-first CSS with a custom design system — brand gradients, dark mode tokens, glass-morphism cards, and responsive layout utilities.</div>
+      </div>
+      <div class="tech-card">
+        <div class="tech-layer">Backend</div>
+        <div class="tech-name">Node.js + Express 5</div>
+        <div class="tech-desc">RESTful API server. Handles AI orchestration, payment verification, file ingestion, and all token operations via SECURITY DEFINER RPCs.</div>
+      </div>
+      <div class="tech-card">
+        <div class="tech-layer">Database & Auth</div>
+        <div class="tech-name">Supabase / PostgreSQL</div>
+        <div class="tech-desc">Managed Postgres with Row-Level Security on every table. Supabase Auth for JWT sessions. Supabase Storage for file uploads (PDFs, videos).</div>
+      </div>
+      <div class="tech-card">
+        <div class="tech-layer">Vector Search</div>
+        <div class="tech-name">pgvector</div>
+        <div class="tech-desc">IVFFlat index (100 lists) on 768-dim Gemini embeddings stored in the <code>content_chunks</code> table. Cosine-similarity search via <code>match_content_chunks()</code> RPC.</div>
+      </div>
+      <div class="tech-card">
+        <div class="tech-layer">AI / ML</div>
+        <div class="tech-name">Google Gemini API</div>
+        <div class="tech-desc"><code>text-embedding-004</code> for 768-dim vector embeddings. <code>gemini-1.5-flash</code> for all generative tasks — doubts, summaries, mock tests, study plans.</div>
+      </div>
+      <div class="tech-card">
+        <div class="tech-layer">Payments</div>
+        <div class="tech-name">Razorpay</div>
+        <div class="tech-desc">Order creation + HMAC-SHA256 webhook verification. Idempotent crediting via unique <code>payment_id</code> prevents any double-credit on retried callbacks.</div>
+      </div>
+      <div class="tech-card">
+        <div class="tech-layer">Email</div>
+        <div class="tech-name">SendGrid</div>
+        <div class="tech-desc">Transactional email for 6-digit OTP delivery during signup and password reset. Codes generated with <code>crypto.randomInt()</code>, stored in Supabase with 10-min expiry.</div>
+      </div>
+      <div class="tech-card">
+        <div class="tech-layer">Deployment</div>
+        <div class="tech-name">Vercel + Render</div>
+        <div class="tech-desc">Frontend on Vercel (auto-deploy from GitHub, CDN-distributed). Backend on Render (Node.js service, auto-deploy on push). Separate CORS-controlled origins.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 3. RAG PIPELINE -->
+  <div class="section pb">
+    <div class="section-header">
+      <div class="section-num">03</div>
+      <div class="section-title">RAG Pipeline <span class="section-sub">— How the AI answers from your own material</span></div>
+    </div>
+    <div class="callout callout-info">
+      <span class="callout-icon">💡</span>
+      <span>Standard AI chatbots answer from training data — BrainBarter's AI answers exclusively from the student's uploaded PDF, making every answer verifiable and grounded in the actual syllabus material.</span>
+    </div>
+
+    <h4>Ingestion Phase (run once after upload)</h4>
+    <div class="flow">
+      <div class="flow-step">
+        <div class="flow-step-num">Step 1</div>
+        <div class="flow-step-label">Download PDF from Supabase Storage</div>
+      </div>
+      <div class="flow-step">
+        <div class="flow-step-num">Step 2</div>
+        <div class="flow-step-label">Extract text via pdf-parse</div>
+      </div>
+      <div class="flow-step">
+        <div class="flow-step-num">Step 3</div>
+        <div class="flow-step-label">Chunk into ~220-word windows (40-word overlap)</div>
+      </div>
+      <div class="flow-step">
+        <div class="flow-step-num">Step 4</div>
+        <div class="flow-step-label">Embed each chunk — Gemini text-embedding-004 → 768 floats</div>
+      </div>
+      <div class="flow-step">
+        <div class="flow-step-num">Step 5</div>
+        <div class="flow-step-label">Store vectors in content_chunks (pgvector)</div>
+      </div>
+    </div>
+
+    <h4>Retrieval Phase (on every doubt question)</h4>
+    <div class="flow">
+      <div class="flow-step">
+        <div class="flow-step-num">Step 1</div>
+        <div class="flow-step-label">Embed student's question (same model)</div>
+      </div>
+      <div class="flow-step">
+        <div class="flow-step-num">Step 2</div>
+        <div class="flow-step-label">Cosine-similarity search — top 6 chunks for that document</div>
+      </div>
+      <div class="flow-step">
+        <div class="flow-step-num">Step 3</div>
+        <div class="flow-step-label">Feed numbered passages [1]…[6] to Gemini</div>
+      </div>
+      <div class="flow-step">
+        <div class="flow-step-num">Step 4</div>
+        <div class="flow-step-label">Return grounded answer + citations array to client</div>
+      </div>
+    </div>
+
+    <div class="code-block"><pre><span class="code-comment">// server/utils/embeddings.js — chunking with overlap</span>
+<span class="code-keyword">function</span> <span class="code-func">chunkText</span>(text, size = <span class="code-var">220</span>, overlap = <span class="code-var">40</span>) {
+  <span class="code-keyword">const</span> words = text.replace(<span class="code-string">/\s+/g</span>, <span class="code-string">' '</span>).trim().split(<span class="code-string">' '</span>)
+  <span class="code-keyword">const</span> chunks = []
+  <span class="code-keyword">for</span> (<span class="code-keyword">let</span> i = <span class="code-var">0</span>; i &lt; words.length; i += size - overlap) {
+    chunks.push(words.slice(i, i + size).join(<span class="code-string">' '</span>).trim())
+    <span class="code-keyword">if</span> (i + size &gt;= words.length) <span class="code-keyword">break</span>
+  }
+  <span class="code-keyword">return</span> chunks
+}
+
+<span class="code-comment">// server/controllers/aiController.js — semantic retrieval for doubts</span>
+<span class="code-keyword">const</span> queryEmbedding = <span class="code-keyword">await</span> <span class="code-func">embedText</span>(userMessage)
+<span class="code-keyword">const</span> { data: matches } = <span class="code-keyword">await</span> supabase.<span class="code-func">rpc</span>(<span class="code-string">'match_content_chunks'</span>, {
+  p_content_id: contentId,
+  query_embedding: queryEmbedding,
+  match_count: <span class="code-var">6</span>,
+})
+<span class="code-var">contentText</span> = matches.<span class="code-func">map</span>((m, i) =&gt; <span class="code-string">`[${i+1}] ${m.chunk_text}`</span>).<span class="code-func">join</span>(<span class="code-string">'\n\n'</span>)
+citations = matches.<span class="code-func">map</span>((m, i) =&gt; ({ ref: i+<span class="code-var">1</span>, snippet: m.chunk_text.<span class="code-func">slice</span>(<span class="code-var">0</span>,<span class="code-var">180</span>), similarity: m.similarity }))
+</pre></div>
+  </div>
+
+  <!-- 4. SECURITY & ENGINEERING -->
+  <div class="section pb">
+    <div class="section-header">
+      <div class="section-num">04</div>
+      <div class="section-title">Security &amp; Engineering Highlights</div>
+    </div>
+
+    <table>
+      <thead>
+        <tr>
+          <th>Implementation</th>
+          <th>What it does &amp; why it matters</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>HMAC-SHA256 Payment Verification</td>
+          <td>Every Razorpay callback is verified server-side by recomputing the HMAC signature. A client that forges a payment ID cannot credit tokens.</td>
+        </tr>
+        <tr>
+          <td>Idempotent Token Crediting</td>
+          <td><code>credit_purchase()</code> is a <code>SECURITY DEFINER</code> function that checks <code>UNIQUE(payment_id)</code> before crediting — a retried or duplicated webhook callback can never double-credit tokens.</td>
+        </tr>
+        <tr>
+          <td>Row-Level Security (RLS)</td>
+          <td>Enabled on every table. The <code>profiles</code> policy explicitly blocks clients from updating <code>token_balance</code> or <code>role</code> — even with a valid JWT. All balance changes go through audited RPCs.</td>
+        </tr>
+        <tr>
+          <td>Atomic Withdrawal RPC</td>
+          <td><code>request_withdrawal()</code> deducts the token balance and inserts the withdrawal record atomically in one DB transaction, preventing double-spend from concurrent requests.</td>
+        </tr>
+        <tr>
+          <td>Self-Rating Prevention</td>
+          <td><code>rate_content()</code> SECURITY DEFINER function checks <code>creator_id ≠ rater_id</code> at the DB level — a creator cannot earn the +2 token rating reward on their own content.</td>
+        </tr>
+        <tr>
+          <td>Cryptographic Email OTPs</td>
+          <td>6-digit codes generated via <code>crypto.randomInt()</code> (CSPRNG), stored in Supabase (not in-memory), expire in 10 minutes, and are deleted on successful use — resilient to cold-start restarts.</td>
+        </tr>
+        <tr>
+          <td>Creator-Only Ingestion Guard</td>
+          <td>The <code>/api/ai/ingest</code> route verifies <code>content.creator_id === req.user.id</code> before running the embedding pipeline — preventing anyone from triggering costly GPU work on another user's content.</td>
+        </tr>
+        <tr>
+          <td>First-Rating Idempotency</td>
+          <td>The +2 token reward for rating is gated by a DB check for an existing rating row — submitting the same rating twice never double-credits the rater.</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <h4>Payment Flow (end-to-end)</h4>
+    <div class="flow">
+      <div class="flow-step"><div class="flow-step-num">1</div><div class="flow-step-label">Client requests Razorpay order from server</div></div>
+      <div class="flow-step"><div class="flow-step-num">2</div><div class="flow-step-label">Server creates order, returns order_id</div></div>
+      <div class="flow-step"><div class="flow-step-num">3</div><div class="flow-step-label">Razorpay checkout completes on client</div></div>
+      <div class="flow-step"><div class="flow-step-num">4</div><div class="flow-step-label">Client sends payment_id + signature to server</div></div>
+      <div class="flow-step"><div class="flow-step-num">5</div><div class="flow-step-label">Server verifies HMAC, calls credit_purchase() RPC</div></div>
+    </div>
+  </div>
+
+  <!-- 5. AI FEATURES -->
+  <div class="section pb">
+    <div class="section-header">
+      <div class="section-num">05</div>
+      <div class="section-title">AI Features <span class="section-sub">— Full capability overview</span></div>
+    </div>
+
+    <div class="grid-2">
+      <div class="card">
+        <span class="card-icon">🔍</span>
+        <div class="card-title">RAG Doubt Solver</div>
+        <p>Ask any question about an uploaded PDF. The AI retrieves the most relevant chunks via cosine similarity and answers exclusively from those passages, citing [1], [2]… inline. Displayed with a "Grounded in this material" citation panel.</p>
+      </div>
+      <div class="card">
+        <span class="card-icon">📝</span>
+        <div class="card-title">Summarize &amp; Simplify</div>
+        <p>Condenses any uploaded content into 5–7 bullet points, or re-explains it in plain language. Runs against the full indexed text of the document (not just the title/description).</p>
+      </div>
+      <div class="card">
+        <span class="card-icon">📋</span>
+        <div class="card-title">Generate Notes &amp; Questions</div>
+        <p>Produces structured revision notes with headings and definitions, plus 10 exam questions (short + long answer) derived directly from the uploaded material.</p>
+      </div>
+      <div class="card">
+        <span class="card-icon">⚡</span>
+        <div class="card-title">Exam Mode (4 modes)</div>
+        <p><strong>Expected Questions</strong> — probable exam questions using PYQ context. <strong>Mock Test</strong> — 10-question MCQ with answers. <strong>Revision Sheet</strong> — one-page concept summary. <strong>Final Prep</strong> — must-revise checklist.</p>
+      </div>
+      <div class="card">
+        <span class="card-icon">📅</span>
+        <div class="card-title">AI Study Planner (Agentic)</div>
+        <p>Given a subject, optional topic, and target days (3–30), Gemini generates a day-by-day revision plan with daily goals, subtopics, activities (reading, practice, flashcards), and a daily self-check question. Progressive difficulty across the plan.</p>
+      </div>
+      <div class="card">
+        <span class="card-icon">🏛️</span>
+        <div class="card-title">Previous Year Question Context</div>
+        <p>Exam Mode pulls stored PYQ text dumps from the database and feeds them as additional context to Gemini — so expected questions are calibrated to actual exam patterns, not generic guesses.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- 6. TOKEN ECONOMY -->
+  <div class="section pb">
+    <div class="section-header">
+      <div class="section-num">06</div>
+      <div class="section-title">Token Economy <span class="section-sub">— The two-sided marketplace model</span></div>
+    </div>
+    <div class="grid-2">
+      <div class="token-table">
+        <div class="token-table-title">💰 Token Rules</div>
+        <div class="token-row"><span class="token-label">Buy rate</span><span class="token-value">₹1 = 10 tokens</span></div>
+        <div class="token-row"><span class="token-label">Sell / withdraw rate</span><span class="token-value">10 tokens = ₹0.80</span></div>
+        <div class="token-row"><span class="token-label">Platform fee</span><span class="token-value">20% on withdrawals</span></div>
+        <div class="token-row"><span class="token-label">Minimum purchase</span><span class="token-value">₹10 (100 tokens)</span></div>
+        <div class="token-row"><span class="token-label">Minimum withdrawal</span><span class="token-value">₹50 (625 tokens)</span></div>
+        <div class="token-row"><span class="token-label">Signup bonus</span><span class="token-value">50 free tokens</span></div>
+        <div class="token-row"><span class="token-label">First-rating reward</span><span class="token-value">+2 tokens</span></div>
+      </div>
+      <div>
+        <ul class="styled">
+          <li><strong>Earn:</strong> Upload content → receive tokens every time a learner unlocks it</li>
+          <li><strong>Spend:</strong> Unlock any content with tokens via atomic server-side transaction</li>
+          <li><strong>Withdraw:</strong> Submit UPI or bank details → admin approves → real INR transferred</li>
+          <li><strong>Buy:</strong> Top up via Razorpay — ₹10 minimum, verified server-side</li>
+          <li><strong>Reject refund:</strong> If admin rejects a withdrawal, tokens are automatically refunded via <code>refund_tokens()</code> SECURITY DEFINER function</li>
+          <li><strong>Full ledger:</strong> Every earn, spend, buy, and withdrawal is recorded with timestamp and type in a transaction history table</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- 7. ADMIN PANEL -->
+  <div class="section">
+    <div class="section-header">
+      <div class="section-num">07</div>
+      <div class="section-title">Admin Panel <span class="section-sub">— 5-tab moderation dashboard</span></div>
+    </div>
+    <div class="grid-3" style="grid-template-columns:1fr 1fr 1fr;">
+      <div class="card"><div class="card-title">💳 Withdrawals</div><p>Review pending withdrawal requests. Approve to disburse, reject to auto-refund tokens to creator via DB function.</p></div>
+      <div class="card"><div class="card-title">💬 Feedback</div><p>Triage user-submitted feedback. Mark items as Reviewed or Done. Supports category filtering (Bug, Feature, UX, etc.).</p></div>
+      <div class="card"><div class="card-title">🚩 Reports</div><p>Review content reports submitted by users. Take action: warn creator, unpublish content, or dismiss the report.</p></div>
+      <div class="card"><div class="card-title">✅ Verify Creators</div><p>Grant verified-creator badges to qualified uploaders — displayed as a badge on their profile and content.</p></div>
+      <div class="card"><div class="card-title">👥 Users</div><p>View all registered users, manage roles, and monitor account activity across the platform.</p></div>
+      <div class="card"><div class="card-title">🔐 Access Control</div><p>Admin tab is protected by both client-side <code>ProtectedRoute adminOnly</code> and server-side role check from JWT claims via Supabase RLS.</p></div>
+    </div>
+  </div>
+
+  <!-- 8. AUTH & ACCOUNTS -->
+  <div class="section">
+    <div class="section-header">
+      <div class="section-num">08</div>
+      <div class="section-title">Authentication &amp; Accounts</div>
+    </div>
+    <ul class="badge-list">
+      <li>
+        <span class="icon icon-green">✉️</span>
+        <span><strong>Email-verified signup</strong> — 6-digit OTP generated via <code>crypto.randomInt()</code>, sent through SendGrid, stored in Supabase with 10-minute TTL. Codes are deleted on successful verification. Resistant to cold-start restarts (no in-memory state).</span>
+      </li>
+      <li>
+        <span class="icon icon-purple">🔑</span>
+        <span><strong>Password reset via email</strong> — same OTP flow. User receives a code, enters it to confirm identity, then sets a new password via the Supabase Auth API.</span>
+      </li>
+      <li>
+        <span class="icon icon-blue">🏷️</span>
+        <span><strong>Role-based access</strong> — roles are <code>user</code> or <code>admin</code>. The admin role is set in the database and propagated through JWT claims. RLS policies and API guards check this role at every sensitive operation.</span>
+      </li>
+      <li>
+        <span class="icon icon-amber">🎁</span>
+        <span><strong>50 starter tokens on signup</strong> — a PostgreSQL trigger (<code>handle_new_user()</code>) fires on <code>auth.users</code> insert and credits 50 tokens to the new profile automatically.</span>
+      </li>
+    </ul>
+  </div>
+
+  <!-- 9. RESUME READY -->
+  <div class="section pb">
+    <div class="section-header">
+      <div class="section-num">09</div>
+      <div class="section-title">Resume-Ready Summary</div>
+    </div>
+    <div class="resume-box">
+      <div class="resume-box-title">🧠 BrainBarter — Peer-to-Peer Learning Marketplace</div>
+      <div class="resume-bullet">
+        <div class="rb-dot"></div>
+        <span>Built a <strong>peer-to-peer learning marketplace</strong> where students earn tokens by uploading study material and spend them to unlock peer content, with real-money withdrawals via UPI/bank — secured by <strong>HMAC-SHA256 Razorpay verification</strong>, <strong>atomic PostgreSQL transactions</strong>, and <strong>Row-Level Security</strong> preventing any client-side token manipulation</span>
+      </div>
+      <div class="resume-bullet">
+        <div class="rb-dot"></div>
+        <span>Implemented a <strong>RAG AI pipeline</strong> using Google Gemini embeddings (768-dim) + pgvector cosine similarity so the AI tutor answers student doubts grounded in the <em>actual uploaded PDF</em>, returning <strong>inline citations</strong> to the exact passages used — not general training knowledge</span>
+      </div>
+      <div class="resume-bullet">
+        <div class="rb-dot"></div>
+        <span>Engineered an <strong>agentic AI Study Planner</strong> that generates personalized day-by-day revision schedules (3–30 days) with progressive goals and daily self-checks, alongside <strong>Exam Mode</strong> (mock tests, revision sheets, expected questions) — full stack: React · Express · Supabase · Gemini · Razorpay</span>
+      </div>
+    </div>
+    <div class="callout callout-success">
+      <span class="callout-icon">🔗</span>
+      <span><strong>Live:</strong> brain-barter-zeta.vercel.app &nbsp;·&nbsp; <strong>Tech:</strong> React · Vite · Tailwind · Node.js · Express · PostgreSQL · pgvector · Supabase · Google Gemini API · Razorpay · SendGrid · Vercel · Render</span>
+    </div>
+  </div>
+
+  <!-- 10. ARCHITECTURE DIAGRAM -->
+  <div class="section">
+    <div class="section-header">
+      <div class="section-num">10</div>
+      <div class="section-title">System Architecture</div>
+    </div>
+    <div class="code-block"><pre>
+┌─────────────────────────────────────────────────────────────────┐
+│                        CLIENT (React + Vite)                     │
+│    Browse · Content · Upload · Wallet · Exam Mode · Dashboard   │
+└──────────────────────────────┬──────────────────────────────────┘
+                               │  HTTPS REST  (JWT Bearer token)
+                               ▼
+┌─────────────────────────────────────────────────────────────────┐
+│                   EXPRESS API  (Node.js / Render)                │
+│                                                                  │
+│  /api/auth     — signup, verify OTP, reset password             │
+│  /api/content  — upload, list, unlock, rate, report             │
+│  /api/ai       — ingest (RAG), assist (RAG doubt/summarize),    │
+│                  exam (mock, revision, study-plan)               │
+│  /api/payment  — Razorpay order + HMAC verify + credit          │
+│  /api/admin    — withdrawals, feedback, reports, verify         │
+└───────────────┬─────────────────────────────┬───────────────────┘
+                │ Supabase JS SDK             │ Gemini API
+                ▼                             ▼
+┌───────────────────────────┐   ┌────────────────────────────────┐
+│   SUPABASE (PostgreSQL)   │   │       GOOGLE GEMINI            │
+│                           │   │                                │
+│  profiles (RLS)           │   │  text-embedding-004            │
+│  content                  │   │  → 768-dim float vectors       │
+│  content_chunks (pgvector)│   │                                │
+│  purchases (idempotent)   │   │  gemini-1.5-flash              │
+│  withdrawals              │   │  → generative answers,         │
+│  transactions             │   │     study plans, mock tests    │
+│  feedback / reports       │   └────────────────────────────────┘
+│  email_verification_codes │
+│  ai_logs                  │   ┌────────────────────────────────┐
+│                           │   │       RAZORPAY                 │
+│  SECURITY DEFINER RPCs:   │   │  order create + HMAC verify   │
+│  credit_purchase()        │   └────────────────────────────────┘
+│  request_withdrawal()     │
+│  rate_content()           │   ┌────────────────────────────────┐
+│  refund_tokens()          │   │       SENDGRID                 │
+│  increment_views()        │   │  OTP email delivery           │
+│  match_content_chunks()   │   └────────────────────────────────┘
+└───────────────────────────┘
+</pre></div>
+  </div>
+
+</div><!-- /page-content -->
+
+</body>
+</html>
