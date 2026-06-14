@@ -40,6 +40,7 @@ async function ingestContent(req, res) {
     const chunks = chunkText(fullText)
     if (chunks.length === 0) return res.json({ chunks: 0 })
 
+    // drop old chunks first so re-ingestion stays idempotent
     await supabase.from('content_chunks').delete().eq('content_id', contentId)
 
     let inserted = 0

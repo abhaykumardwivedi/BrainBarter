@@ -14,6 +14,7 @@ exports.sendVerificationCode = async (req, res) => {
     const { email } = req.body
     if (!email || !email.includes('@')) return res.status(400).json({ error: 'Valid email required' })
 
+    // crypto.randomInt is cryptographically secure, unlike Math.random()
     const code = (crypto.randomInt(0, 1000000)).toString().padStart(6, '0')
     const expires = new Date(Date.now() + 10 * 60 * 1000).toISOString()
 
