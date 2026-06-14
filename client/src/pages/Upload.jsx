@@ -2,26 +2,40 @@ import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
   RiUploadCloud2Line, RiVideoLine, RiFileTextLine,
-  RiImageLine, RiCheckLine,
+  RiImageLine, RiCheckLine, RiCloseLine,
 } from 'react-icons/ri'
 import { Button, Input } from '../components/common'
 import { supabase } from '../lib/supabase'
 import useAuthStore from '../store/authStore'
 import toast from 'react-hot-toast'
 
-const topics   = ['Normalization', 'ER Diagrams', 'SQL', 'Transactions', 'Indexing', 'Other']
+const TOPIC_SUGGESTIONS = [
+  'Normalization', 'ER Diagrams', 'SQL', 'Transactions', 'Indexing',
+  'Data Structures', 'Algorithms', 'Operating Systems', 'Computer Networks',
+  'OOP Concepts', 'Design Patterns', 'System Design', 'Graph Theory',
+  'Dynamic Programming', 'Sorting & Searching', 'Trees & Heaps',
+  'Microprocessors', 'Digital Electronics', 'Automata Theory',
+  'Compiler Design', 'Software Engineering', 'Machine Learning Basics',
+]
+
 const difficulties = ['beginner', 'medium', 'advanced']
 
 export default function Upload() {
   const navigate = useNavigate()
   const { user } = useAuthStore()
   const [form, setForm] = useState({
-    title: '', description: '', subject: '', topic: '', type: 'video', difficulty: 'medium',
+    title: '', description: '', subject: '', type: 'video', difficulty: 'medium',
     tokenCost: 20, tags: '',
   })
   const [subjects, setSubjects] = useState([])
   const [customSubject, setCustomSubject] = useState('')
-  const [customTopic, setCustomTopic] = useState('')
+  const [topicInput, setTopicInput] = useState('')
+  const [showSuggestions, setShowSuggestions] = useState(false)
+  const [file, setFile] = useState(null)
+  const [thumb, setThumb] = useState(null)
+  const [progress, setProgress] = useState(0)
+  const [uploading, setUploading] = useState(false)
+  const [done, setDone] = useState(false)
 
   // Load real subjects so uploaded content matches what Browse filters on
   useEffect(() => {
@@ -32,64 +46,52 @@ export default function Upload() {
         setForm(f => ({ ...f, subject: f.subject || list[0]?.name || '' }))
       })
   }, [])
-  const [file, setFile] = useState(null)
-  const [thumb, setThumb] = useState(null)
-  const [progress, setProgress] = useState(0)
-  const [uploading, setUploading] = useState(false)
-  const [done, setDone] = useState(false)
 
   const handle = e => setForm(f => ({ ...f, [e.target.name]: e.target.value }))
-
   const maxSize = form.type === 'video' ? 30 : 10
 
   const handleFile = e => {
     const f = e.target.files[0]
     if (!f) return
-    if (f.size > maxSize * 1024 * 1024) {
-      alert(`Max file size is ${maxSize}MB`)
-      return
-    }
+    if (f.size > maxSize * 1024 * 1024) { alert(`Max file size is ${maxSize}MB`); return }
     setFile(f)
   }
+
+  const filteredSuggestions = TOPIC_SUGGESTIONS.filter(t =>
+    topicInput.length > 0 && t.toLowerCase().includes(topicInput.toLowerCase())
+  )
 
   const submit = async e => {
     e.preventDefault()
     if (!file) return toast.error('Please select a file')
     if (!user) return toast.error('Please login')
-    
+
+    const finalSubject = form.subject === 'Other' ? customSubject.trim() : form.subject
+    const finalTopic = topicInput.trim()
+
+    if (!finalSubject) return toast.error('Please select or enter a subject')
+    if (!finalTopic) return toast.error('Please enter a topic')
+
     setUploading(true)
     setProgress(0)
 
     try {
-      // Get final subject and topic values
-      const finalSubject = form.subject === 'Other' ? customSubject : form.subject
-      const finalTopic = form.topic === 'Other' ? customTopic : form.topic
-
-      if (!finalSubject || !finalTopic) {
-        toast.error('Please fill subject and topic')
-        setUploading(false)
-        return
-      }
-
       // Link to a real subject row when possible (null for custom "Other" subjects)
       const subjectId = subjects.find(s => s.name === finalSubject)?.id || null
 
-      // Upload file to Supabase Storage
       const fileExt = file.name.split('.').pop()
       const fileName = `${user.id}/${Date.now()}.${fileExt}`
-      
+
       setProgress(30)
       const { error: fileError } = await supabase.storage
         .from('content')
         .upload(fileName, file, { cacheControl: '3600', upsert: false })
-
       if (fileError) throw fileError
 
       const fileUrl = supabase.storage.from('content').getPublicUrl(fileName).data.publicUrl
-      
+
       setProgress(60)
 
-      // Upload thumbnail if exists
       let thumbnailUrl = null
       if (thumb) {
         const thumbExt = thumb.name.split('.').pop()
@@ -104,8 +106,7 @@ export default function Upload() {
 
       setProgress(80)
 
-      // Insert content to database
-      const { error: dbError } = await supabase.from('content').insert({
+      const { data: inserted, error: dbError } = await supabase.from('content').insert({
         creator_id: user.id,
         title: form.title,
         description: form.description,
@@ -116,17 +117,29 @@ export default function Upload() {
         difficulty: form.difficulty,
         tags: form.tags.split(',').map(t => t.trim()).filter(Boolean),
         is_published: false,
-        // Store subject and topic for filtering in Browse
+        // Store subject and topic for filtering / grouping in Browse
         subject_id: subjectId,
         subject_name: finalSubject,
         topic_name: finalTopic,
-      })
-
+      }).select('id').single()
       if (dbError) throw dbError
 
       setProgress(100)
+
+      // Index the content for the AI tutor (RAG). Fire-and-forget — extracting
+      // and embedding a PDF can take a few seconds; the upload itself is done.
+      if (inserted?.id) {
+        supabase.auth.getSession().then(({ data: { session } }) => {
+          fetch(`${import.meta.env.VITE_API_URL}/api/ai/ingest`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session?.access_token}` },
+            body: JSON.stringify({ contentId: inserted.id }),
+          }).catch(() => {})
+        })
+      }
+
       setDone(true)
-      toast.success('Content uploaded successfully!')
+      toast.success('Content uploaded! Indexing it for the AI tutor…')
     } catch (err) {
       console.error(err)
       toast.error(err.message || 'Upload failed')
@@ -145,7 +158,11 @@ export default function Upload() {
           <h2 className="text-xl font-display font-bold text-gray-900 dark:text-white mb-2">Upload Successful!</h2>
           <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">Your content is saved as draft. Publish it when ready.</p>
           <div className="flex gap-2">
-            <Button variant="secondary" className="flex-1" onClick={() => { setDone(false); setFile(null); setThumb(null); setProgress(0); setUploading(false); setForm(f => ({ ...f, title: '', description: '', tags: '' })) }}>
+            <Button variant="secondary" className="flex-1" onClick={() => {
+              setDone(false); setFile(null); setThumb(null); setProgress(0)
+              setUploading(false); setTopicInput('')
+              setForm(f => ({ ...f, title: '', description: '', tags: '' }))
+            }}>
               Upload More
             </Button>
             <Button className="flex-1" onClick={() => navigate('/dashboard')}>View Content</Button>
@@ -200,40 +217,55 @@ export default function Upload() {
                 value={form.description} onChange={handle}
               />
             </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="input-label">Subject</label>
-                <select name="subject" className="input" value={form.subject} onChange={handle}>
-                  {subjects.map(s => <option key={s.id} value={s.name}>{s.name}</option>)}
-                  <option value="Other">Other</option>
-                </select>
-                {form.subject === 'Other' && (
-                  <input
-                    type="text"
-                    placeholder="Enter subject name"
-                    className="input mt-2"
-                    value={customSubject}
-                    onChange={e => setCustomSubject(e.target.value)}
-                  />
-                )}
-              </div>
-              <div>
-                <label className="input-label">Topic</label>
-                <select name="topic" className="input" value={form.topic} onChange={handle}>
-                  <option value="">Select topic</option>
-                  {topics.map(t => <option key={t}>{t}</option>)}
-                </select>
-                {form.topic === 'Other' && (
-                  <input
-                    type="text"
-                    placeholder="Enter topic name"
-                    className="input mt-2"
-                    value={customTopic}
-                    onChange={e => setCustomTopic(e.target.value)}
-                  />
-                )}
-              </div>
+
+            {/* Subject */}
+            <div>
+              <label className="input-label">Subject <span className="text-red-500">*</span></label>
+              <select name="subject" className="input" value={form.subject} onChange={handle}>
+                {subjects.map(s => <option key={s.id} value={s.name}>{s.name}</option>)}
+                <option value="Other">Other (custom)</option>
+              </select>
+              {form.subject === 'Other' && (
+                <input
+                  type="text"
+                  placeholder="Enter subject name"
+                  className="input mt-2"
+                  value={customSubject}
+                  onChange={e => setCustomSubject(e.target.value)}
+                />
+              )}
+              <p className="text-xs text-gray-400 mt-1">Used for filtering and grouping in Browse</p>
             </div>
+
+            {/* Topic — free text with autocomplete suggestions */}
+            <div className="relative">
+              <label className="input-label">Topic <span className="text-red-500">*</span></label>
+              <input
+                type="text"
+                placeholder="e.g. Normalization, Graph Theory, OS Scheduling…"
+                className="input"
+                value={topicInput}
+                onChange={e => { setTopicInput(e.target.value); setShowSuggestions(true) }}
+                onFocus={() => setShowSuggestions(true)}
+                onBlur={() => setTimeout(() => setShowSuggestions(false), 150)}
+              />
+              <p className="text-xs text-gray-400 mt-1">Type any topic freely — or pick a suggestion. Used as a search tag.</p>
+
+              {showSuggestions && filteredSuggestions.length > 0 && (
+                <div className="absolute z-10 w-full mt-1 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl shadow-lg overflow-hidden">
+                  {filteredSuggestions.slice(0, 6).map(s => (
+                    <button
+                      key={s} type="button"
+                      onMouseDown={() => { setTopicInput(s); setShowSuggestions(false) }}
+                      className="w-full text-left px-4 py-2.5 text-sm text-gray-700 dark:text-gray-300 hover:bg-brand-50 dark:hover:bg-brand-950 hover:text-brand-600 dark:hover:text-brand-400 transition-colors"
+                    >
+                      {s}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="input-label">Difficulty</label>
@@ -275,6 +307,11 @@ export default function Upload() {
               <input type="file" className="hidden" accept="image/*" onChange={e => setThumb(e.target.files[0])} />
               <RiImageLine size={18} className="text-gray-400" />
               <span className="text-sm text-gray-500">{thumb ? thumb.name : 'Upload thumbnail image'}</span>
+              {thumb && (
+                <button type="button" onClick={e => { e.preventDefault(); setThumb(null) }} className="ml-auto text-gray-400 hover:text-red-500">
+                  <RiCloseLine size={16} />
+                </button>
+              )}
             </label>
           </div>
 
