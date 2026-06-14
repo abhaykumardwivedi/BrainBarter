@@ -1,21 +1,21 @@
 import { useState } from 'react'
 import {
   RiFlashlightLine, RiQuestionLine, RiFileTextLine,
-  RiListCheck2, RiBookOpenLine, RiSparklingLine,
+  RiListCheck2, RiBookOpenLine, RiSparklingLine, RiCalendarLine,
 } from 'react-icons/ri'
 import { supabase } from '../lib/supabase'
 import useAuthStore from '../store/authStore'
 import toast from 'react-hot-toast'
 
 const tabs = [
-  { id: 'expected',  label: 'Expected Questions', icon: RiQuestionLine },
-  { id: 'mock',      label: 'Mock Test',           icon: RiListCheck2 },
-  { id: 'revision',  label: 'Revision Notes',      icon: RiFileTextLine },
-  { id: 'finalprep', label: 'Final Prep',           icon: RiBookOpenLine },
+  { id: 'expected',    label: 'Expected Questions', icon: RiQuestionLine },
+  { id: 'mock',        label: 'Mock Test',           icon: RiListCheck2 },
+  { id: 'revision',    label: 'Revision Notes',      icon: RiFileTextLine },
+  { id: 'finalprep',   label: 'Final Prep',           icon: RiBookOpenLine },
+  { id: 'study-plan',  label: 'Study Planner',        icon: RiCalendarLine },
 ]
 
-const subjects = ['Database Management', 'Operating Systems', 'Computer Networks', 'Data Structures']
-const topics   = ['Normalization', 'ER Diagrams', 'SQL', 'Transactions', 'Indexing']
+const DAY_OPTIONS = [3, 5, 7, 14, 21, 30]
 
 function AIResponseBox({ loading, response, placeholder }) {
   if (loading) {
@@ -48,8 +48,9 @@ function AIResponseBox({ loading, response, placeholder }) {
 export default function ExamMode() {
   const { user } = useAuthStore()
   const [activeTab, setActiveTab] = useState('expected')
-  const [subject, setSubject] = useState(subjects[0])
-  const [topic, setTopic] = useState(topics[0])
+  const [subject, setSubject] = useState('')
+  const [topic, setTopic] = useState('')
+  const [days, setDays] = useState(7)
   const [loading, setLoading] = useState(false)
   const [response, setResponse] = useState('')
 
@@ -58,27 +59,30 @@ export default function ExamMode() {
       toast.error('Please login to use AI features')
       return
     }
-    
+    if (!subject.trim()) {
+      toast.error('Please enter a subject')
+      return
+    }
+
     setLoading(true)
     setResponse('')
-    
+
     try {
       const { data: { session } } = await supabase.auth.getSession()
+      const body = { taskType: activeTab, subject: subject.trim(), topic: topic.trim() }
+      if (activeTab === 'study-plan') body.days = days
+
       const res = await fetch(`${import.meta.env.VITE_API_URL}/api/ai/exam`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${session.access_token}`
         },
-        body: JSON.stringify({
-          taskType: activeTab,
-          subject,
-          topic,
-        })
+        body: JSON.stringify(body)
       })
-      
+
       if (!res.ok) throw new Error('AI service unavailable')
-      
+
       const data = await res.json()
       setResponse(data.response || 'No response from AI')
     } catch (err) {
@@ -89,6 +93,8 @@ export default function ExamMode() {
       setLoading(false)
     }
   }
+
+  const isStudyPlan = activeTab === 'study-plan'
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-[#2a0000] via-[#1a0000] to-[#0d0000]">
@@ -115,12 +121,12 @@ export default function ExamMode() {
         </div>
 
         {/* Tabs */}
-        <div className="flex gap-1 p-1 mb-6 rounded-xl bg-red-950/30 border border-red-900/50">
+        <div className="flex gap-1 p-1 mb-6 rounded-xl bg-red-950/30 border border-red-900/50 overflow-x-auto">
           {tabs.map(({ id, label, icon: Icon }) => (
             <button
               key={id}
               onClick={() => { setActiveTab(id); setResponse('') }}
-              className={`flex-1 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+              className={`flex-shrink-0 flex-1 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
                 activeTab === id
                   ? 'bg-gradient-exam text-white shadow-glow-exam'
                   : 'text-exam-300/60 hover:text-exam-200 hover:bg-exam-950/50'
@@ -136,26 +142,65 @@ export default function ExamMode() {
 
         {/* Controls */}
         <div className="rounded-2xl bg-red-950/30 border border-red-900/50 p-6 mb-6">
+          {isStudyPlan && (
+            <div className="mb-4 p-3 rounded-xl bg-red-950/50 border border-exam-800/50">
+              <p className="text-xs text-exam-300/80 flex items-center gap-1.5">
+                <RiCalendarLine size={14} />
+                Enter your subject and topic — the AI will generate a personalized day-by-day revision plan with daily goals and activities.
+              </p>
+            </div>
+          )}
           <div className="grid sm:grid-cols-2 gap-4 mb-4">
             <div>
               <label className="block text-sm font-medium text-exam-200 mb-1.5">Subject</label>
-              <select className="w-full rounded-xl bg-black/50 border border-exam-900/50 text-gray-200 px-3 py-2.5 focus:border-exam-500 focus:outline-none"
-                value={subject} onChange={e => setSubject(e.target.value)}>
-                {subjects.map(s => <option key={s} className="bg-[#1a0606]">{s}</option>)}
-              </select>
+              <input
+                type="text"
+                placeholder="e.g. Database Management, Physics..."
+                className="w-full rounded-xl bg-black/50 border border-exam-900/50 text-gray-200 px-3 py-2.5 focus:border-exam-500 focus:outline-none placeholder:text-gray-600"
+                value={subject}
+                onChange={e => setSubject(e.target.value)}
+              />
             </div>
             <div>
-              <label className="block text-sm font-medium text-exam-200 mb-1.5">Topic</label>
-              <select className="w-full rounded-xl bg-black/50 border border-exam-900/50 text-gray-200 px-3 py-2.5 focus:border-exam-500 focus:outline-none"
-                value={topic} onChange={e => setTopic(e.target.value)}>
-                {topics.map(t => <option key={t} className="bg-[#1a0606]">{t}</option>)}
-              </select>
+              <label className="block text-sm font-medium text-exam-200 mb-1.5">Topic <span className="text-exam-400/60">(optional)</span></label>
+              <input
+                type="text"
+                placeholder="e.g. SQL Joins, Thermodynamics..."
+                className="w-full rounded-xl bg-black/50 border border-exam-900/50 text-gray-200 px-3 py-2.5 focus:border-exam-500 focus:outline-none placeholder:text-gray-600"
+                value={topic}
+                onChange={e => setTopic(e.target.value)}
+              />
             </div>
           </div>
+
+          {isStudyPlan && (
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-exam-200 mb-2">Study Duration</label>
+              <div className="flex gap-2 flex-wrap">
+                {DAY_OPTIONS.map(d => (
+                  <button
+                    key={d}
+                    onClick={() => setDays(d)}
+                    className={`px-4 py-2 rounded-xl text-sm font-medium border transition-colors ${
+                      days === d
+                        ? 'bg-gradient-exam text-white border-transparent shadow-glow-exam'
+                        : 'border-exam-900/50 text-exam-300/70 hover:border-exam-600 hover:text-exam-200'
+                    }`}
+                  >
+                    {d} Days
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
           <button onClick={generate} disabled={loading}
             className="inline-flex items-center justify-center gap-1.5 w-full sm:w-auto px-5 py-2.5 rounded-xl bg-gradient-exam text-white font-medium shadow-glow-exam hover:opacity-90 disabled:opacity-60 transition-opacity">
             <RiSparklingLine size={16} />
-            {loading ? 'Generating…' : 'Generate with AI'}
+            {loading
+              ? (isStudyPlan ? 'Building your plan…' : 'Generating…')
+              : (isStudyPlan ? `Generate ${days}-Day Plan` : 'Generate with AI')
+            }
           </button>
         </div>
 
@@ -163,7 +208,7 @@ export default function ExamMode() {
         <div className="rounded-2xl bg-red-950/30 border border-red-900/50 p-6">
           <div className="flex items-center justify-between mb-4">
             <h3 className="font-display font-semibold text-white">
-              {tabs.find(t => t.id === activeTab)?.label}
+              {isStudyPlan ? `${days}-Day Study Plan` : tabs.find(t => t.id === activeTab)?.label}
             </h3>
             {response && (
               <button onClick={() => navigator.clipboard.writeText(response)}
@@ -175,7 +220,11 @@ export default function ExamMode() {
           <AIResponseBox
             loading={loading}
             response={response}
-            placeholder={`Select subject and topic, then click Generate to get ${tabs.find(t => t.id === activeTab)?.label.toLowerCase()}`}
+            placeholder={
+              isStudyPlan
+                ? `Enter subject and number of days, then generate your personalized study plan`
+                : `Select subject and topic, then click Generate to get ${tabs.find(t => t.id === activeTab)?.label.toLowerCase()}`
+            }
           />
         </div>
 
