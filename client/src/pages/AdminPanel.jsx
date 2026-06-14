@@ -1,17 +1,18 @@
 import { useState, useEffect } from 'react'
 import {
-  RiShieldLine, RiFlagLine, RiCheckLine,
-  RiDeleteBinLine, RiMedalLine, RiUserLine, RiBankLine, RiCloseLine,
+  RiShieldLine, RiCheckLine,
+  RiDeleteBinLine, RiMedalLine, RiCloseLine,
 } from 'react-icons/ri'
-import { Badge, Button, Avatar } from '../components/common'
+import { Badge, Avatar } from '../components/common'
 import { supabase } from '../lib/supabase'
 import toast from 'react-hot-toast'
 
 const tabs = [
-  { id: 'withdrawals', label: 'Withdrawal Requests' },
-  { id: 'reports',     label: 'Reports'            },
-  { id: 'creators',    label: 'Verify Creators'    },
-  { id: 'content',     label: 'Content Moderation' },
+  { id: 'withdrawals', label: 'Withdrawals'     },
+  { id: 'feedback',    label: 'Feedback'        },
+  { id: 'reports',     label: 'Reports'         },
+  { id: 'creators',    label: 'Verify Creators' },
+  { id: 'content',     label: 'Content'         },
 ]
 
 export default function AdminPanel() {
@@ -20,6 +21,7 @@ export default function AdminPanel() {
   const [reports, setReports]     = useState([])
   const [creators, setCreators]   = useState([])
   const [content, setContent]     = useState([])
+  const [feedbacks, setFeedbacks] = useState([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -27,6 +29,7 @@ export default function AdminPanel() {
     loadReports()
     loadCreators()
     loadContent()
+    loadFeedback()
   }, [])
 
   const loadWithdrawals = async () => {
@@ -72,6 +75,19 @@ export default function AdminPanel() {
       .order('created_at', { ascending: false })
       .limit(50)
     setContent(data || [])
+  }
+
+  const loadFeedback = async () => {
+    const { data } = await supabase
+      .from('feedback')
+      .select('*, profiles(username)')
+      .order('created_at', { ascending: false })
+    setFeedbacks(data || [])
+  }
+
+  const markFeedback = async (id, status) => {
+    const { error } = await supabase.from('feedback').update({ status }).eq('id', id)
+    if (!error) setFeedbacks(f => f.map(x => x.id === id ? { ...x, status } : x))
   }
 
   const handleWithdrawal = async (id, action) => {
@@ -287,6 +303,38 @@ export default function AdminPanel() {
                 </div>
               ))
             )}
+          </div>
+        )}
+
+        {/* Feedback */}
+        {activeTab === 'feedback' && (
+          <div className="card space-y-3 animate-fade-in">
+            {feedbacks.length === 0 ? (
+              <p className="text-sm text-gray-400 text-center py-8">No feedback yet</p>
+            ) : feedbacks.map(fb => (
+              <div key={fb.id} className="p-4 rounded-xl bg-gray-50 dark:bg-gray-800/30 space-y-2">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Badge variant="purple">{fb.category}</Badge>
+                    <span className="text-xs text-gray-400">
+                      {fb.profiles?.username ? `@${fb.profiles.username}` : 'Anonymous'} · {new Date(fb.created_at).toLocaleDateString()}
+                    </span>
+                  </div>
+                  <Badge variant={fb.status === 'new' ? 'amber' : fb.status === 'reviewed' ? 'gray' : 'green'}>{fb.status}</Badge>
+                </div>
+                <p className="text-sm text-gray-700 dark:text-gray-300 whitespace-pre-wrap">{fb.message}</p>
+                {fb.status === 'new' && (
+                  <div className="flex gap-2 pt-1">
+                    <button onClick={() => markFeedback(fb.id, 'reviewed')} className="btn-secondary btn-sm">
+                      <RiCheckLine size={13} /> Mark Reviewed
+                    </button>
+                    <button onClick={() => markFeedback(fb.id, 'done')} className="btn-primary btn-sm">
+                      <RiCheckLine size={13} /> Done
+                    </button>
+                  </div>
+                )}
+              </div>
+            ))}
           </div>
         )}
 

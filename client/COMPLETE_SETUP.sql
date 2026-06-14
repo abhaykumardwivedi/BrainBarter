@@ -7,9 +7,28 @@
 --   • credit_purchase  (token purchase — REQUIRED by payment flow)
 --   • request_withdrawal, rate_content (run in-session, now versioned)
 --   • increment_views
+--   • email_verification_codes (survives server restarts; used by authController)
 -- Run AFTER supabase_schema.sql.  Run order does not matter much
 -- because every statement is guarded with if-not-exists / replace.
 -- ============================================================
+
+-- ============= EMAIL VERIFICATION CODES =============
+-- Replaces in-memory Map in authController — survives server cold-starts.
+-- authController upserts on email (one pending code per address at a time).
+-- verifyCode deletes on success; row is also auto-deleted after 10 minutes
+-- by a scheduled job or by the next upsert (TTL enforced in application logic).
+create table if not exists email_verification_codes (
+  email      text primary key,
+  code       text not null,
+  expires_at timestamptz not null,
+  created_at timestamptz default now()
+);
+
+-- Only the server (service_role) touches this table — no RLS needed for clients
+alter table email_verification_codes enable row level security;
+drop policy if exists "No client access to verification codes" on email_verification_codes;
+create policy "No client access to verification codes" on email_verification_codes
+  for all using (false); -- blocks all client access; service_role bypasses RLS
 
 -- ============= PROFILES (the table everything references) =============
 create table if not exists profiles (
@@ -153,6 +172,83 @@ create or replace function increment_views(content_id uuid) returns void as $$
   update content set views = coalesce(views, 0) + 1 where id = content_id;
 $$ language sql security definer;
 grant execute on function increment_views(uuid) to anon, authenticated;
+
+-- ============= USER FEEDBACK =============
+-- Floating "Feedback" button (client) inserts here. Admin Panel reads it.
+create table if not exists feedback (
+  id         uuid primary key default gen_random_uuid(),
+  user_id    uuid references profiles(id) on delete set null,
+  category   text not null default 'Other',
+  message    text not null,
+  status     text not null default 'new' check (status in ('new', 'reviewed', 'done')),
+  created_at timestamptz default now()
+);
+
+alter table feedback enable row level security;
+
+-- Anyone (logged in or anonymous) may submit feedback
+drop policy if exists "Anyone can submit feedback" on feedback;
+create policy "Anyone can submit feedback" on feedback
+  for insert with check (true);
+
+-- A user can read their own submissions
+drop policy if exists "Users read own feedback" on feedback;
+create policy "Users read own feedback" on feedback
+  for select using (auth.uid() = user_id);
+
+-- Admins can read/update all feedback (Admin Panel)
+drop policy if exists "Admins manage feedback" on feedback;
+create policy "Admins manage feedback" on feedback
+  for all using (
+    exists (select 1 from profiles where id = auth.uid() and role = 'admin')
+  );
+
+-- ============= RAG: VECTOR SEARCH OVER UPLOADED CONTENT =============
+-- The AI tutor answers grounded in the actual text of uploaded notes/PDFs.
+-- On upload, the server extracts text, splits it into chunks, embeds each
+-- chunk (Gemini text-embedding-004, 768-dim) and stores it here. At query
+-- time it embeds the student's question and finds the closest chunks.
+create extension if not exists vector;
+
+create table if not exists content_chunks (
+  id          bigserial primary key,
+  content_id  uuid references content(id) on delete cascade,
+  chunk_index int  not null,
+  chunk_text  text not null,
+  embedding   vector(768),
+  created_at  timestamptz default now()
+);
+
+create index if not exists content_chunks_content_id_idx
+  on content_chunks (content_id);
+-- Approximate-nearest-neighbour index for fast cosine similarity search
+create index if not exists content_chunks_embedding_idx
+  on content_chunks using ivfflat (embedding vector_cosine_ops) with (lists = 100);
+
+-- Only the server (service_role) reads/writes chunks; clients go through the API
+alter table content_chunks enable row level security;
+drop policy if exists "No client access to chunks" on content_chunks;
+create policy "No client access to chunks" on content_chunks
+  for all using (false);
+
+-- Semantic search: closest chunks of ONE content item to a query embedding.
+-- similarity = 1 - cosine_distance (higher = more relevant).
+create or replace function match_content_chunks(
+  p_content_id uuid,
+  query_embedding vector(768),
+  match_count int default 6
+)
+returns table (chunk_text text, chunk_index int, similarity float)
+language sql stable as $$
+  select chunk_text,
+         chunk_index,
+         1 - (embedding <=> query_embedding) as similarity
+  from content_chunks
+  where content_id = p_content_id
+  order by embedding <=> query_embedding
+  limit match_count;
+$$;
+grant execute on function match_content_chunks(uuid, vector, int) to service_role, authenticated;
 
 -- ============= MAKE brainbarter01@gmail.com ADMIN =============
 update profiles set role = 'admin'
