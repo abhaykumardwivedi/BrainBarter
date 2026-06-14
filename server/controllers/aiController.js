@@ -144,7 +144,7 @@ async function assist(req, res) {
 }
 
 async function examMode(req, res) {
-  const { taskType, subjectId, topicId, subject, topic } = req.body
+  const { taskType, subjectId, topicId, subject, topic, days } = req.body
   if (!taskType) return res.status(400).json({ error: 'taskType is required' })
 
   try {
@@ -164,6 +164,7 @@ async function examMode(req, res) {
       const { data: pyqs } = await supabase.from('pyqs').select('text_dump').eq('subject_id', subjectId).limit(3)
       if (pyqs?.length) context += `\nPrevious Year Questions Context:\n${pyqs.map(p => p.text_dump).join('\n')}`
     }
+    if (days) context += `\nStudy duration: ${days} days`
     if (!context) context = 'General academic content'
 
     const examTaskMap = {
@@ -172,6 +173,7 @@ async function examMode(req, res) {
       'mock':               'mock-test',
       'revision':           'revision-sheet',
       'finalprep':          'final-prep',
+      'study-plan':         'study-plan',
     }
 
     const response = await callGemini(examTaskMap[taskType] || taskType, context)
