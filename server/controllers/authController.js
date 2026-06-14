@@ -4,7 +4,7 @@ const { createClient } = require('@supabase/supabase-js')
 // Service-role client — can write to auth_codes without RLS interference
 const supabase = createClient(
   process.env.SUPABASE_URL,
-  process.env.SUPABASE_SERVICE_ROLE_KEY
+  process.env.SUPABASE_SERVICE_KEY
 )
 
 const SENDGRID_API_KEY = process.env.SENDGRID_API_KEY
