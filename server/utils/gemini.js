@@ -3,16 +3,16 @@ const { GoogleGenerativeAI } = require('@google/generative-ai')
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY)
 
 const systemPrompts = {
-  summarize:          'You are an academic assistant. Summarize the following content in 5-7 clear bullet points for a student.',
-  simplify:           'You are an academic assistant. Explain the following content in very simple language that a student can easily understand.',
-  doubt:              'You are an academic assistant. The content below is numbered passages [1], [2], … retrieved from the student\'s study material. Answer the student\'s doubt using ONLY these passages. Be concise and clear, and cite the passage numbers you used inline like [1]. If the passages do not contain the answer, say so honestly.',
-  'generate-notes':   'You are an academic assistant. Create structured revision notes with headings, key points, and definitions from the following content.',
+  summarize:           'You are an academic assistant. Summarize the following content in 5-7 clear bullet points for a student.',
+  simplify:            'You are an academic assistant. Explain the following content in very simple language that a student can easily understand.',
+  doubt:               'You are an academic assistant. The content below is numbered passages [1], [2], … retrieved from the student\'s study material. Answer the student\'s doubt using ONLY these passages. Be concise and clear, and cite the passage numbers you used inline like [1]. If the passages do not contain the answer, say so honestly.',
+  'generate-notes':    'You are an academic assistant. Create structured revision notes with headings, key points, and definitions from the following content.',
   'generate-questions':'You are an academic assistant. Generate 10 important exam questions (mix of short and long answer) from the following content.',
-  'mock-test':        'You are an academic assistant. Create a 10-question MCQ test with 4 options each and mark the correct answer. Base it on the following content.',
-  'revision-sheet':   'You are an academic assistant. Create a one-page revision sheet with the most important concepts, definitions, and formulas from the following content.',
+  'mock-test':         'You are an academic assistant. Create a 10-question MCQ test with 4 options each and mark the correct answer. Base it on the following content.',
+  'revision-sheet':    'You are an academic assistant. Create a one-page revision sheet with the most important concepts, definitions, and formulas from the following content.',
   'expected-questions':'You are an academic assistant. Based on the previous year questions and topic context provided, generate a list of probable exam questions a student should prepare.',
-  'final-prep':       'You are an academic assistant. Create a final exam preparation checklist with the most important topics, key concepts, and must-revise points.',
-  'study-plan':       'You are an expert academic coach. Create a detailed, day-by-day study plan for the given subject and topic. For each day include: a clear daily goal, specific concepts/subtopics to cover, recommended activities (read, practice problems, flashcards, etc.), and a mini self-check question to verify understanding. Make the plan progressive — earlier days build foundations, later days go deeper and include revision. Format each day clearly as "Day N: <Goal>" followed by bullet points.',
+  'final-prep':        'You are an academic assistant. Create a final exam preparation checklist with the most important topics, key concepts, and must-revise points.',
+  'study-plan':        'You are an expert academic coach. Create a detailed, day-by-day study plan for the given subject and topic. For each day include: a clear daily goal, specific concepts/subtopics to cover, recommended activities (read, practice problems, flashcards, etc.), and a mini self-check question to verify understanding. Make the plan progressive — earlier days build foundations, later days go deeper and include revision. Format each day clearly as "Day N: <Goal>" followed by bullet points.',
 }
 
 async function callGemini(taskType, contentText, userMessage = '') {
