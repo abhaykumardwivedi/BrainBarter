@@ -1,7 +1,6 @@
 const crypto = require('crypto')
 const { createClient } = require('@supabase/supabase-js')
 
-// Service-role client — can write to auth_codes without RLS interference
 const supabase = createClient(
   process.env.SUPABASE_URL,
   process.env.SUPABASE_SERVICE_KEY
@@ -15,11 +14,9 @@ exports.sendVerificationCode = async (req, res) => {
     const { email } = req.body
     if (!email || !email.includes('@')) return res.status(400).json({ error: 'Valid email required' })
 
-    // Cryptographically secure 6-digit code
     const code = (crypto.randomInt(0, 1000000)).toString().padStart(6, '0')
     const expires = new Date(Date.now() + 10 * 60 * 1000).toISOString()
 
-    // Upsert into Supabase so codes survive server restarts
     const { error: dbErr } = await supabase
       .from('email_verification_codes')
       .upsert({ email, code, expires_at: expires }, { onConflict: 'email' })
@@ -76,7 +73,6 @@ exports.verifyCode = async (req, res) => {
   }
   if (data.code !== code) return res.status(400).json({ error: 'Invalid code' })
 
-  // Delete immediately — single use
   await supabase.from('email_verification_codes').delete().eq('email', email)
   res.json({ success: true })
 }
