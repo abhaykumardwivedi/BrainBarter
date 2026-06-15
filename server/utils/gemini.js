@@ -15,7 +15,7 @@ const systemPrompts = {
 }
 
 async function callGemini(taskType, contentText, userMessage = '') {
-  const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' })
+  const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash' })
   const systemPrompt = systemPrompts[taskType] || systemPrompts.summarize
   const prompt = `${systemPrompt}\n\nContent:\n${contentText}${userMessage ? `\n\nStudent's question: ${userMessage}` : ''}`
   const result = await model.generateContent(prompt)
