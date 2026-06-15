@@ -28,26 +28,45 @@ export default function App() {
 
   useEffect(() => {
     init()
+
+    const fetchAndSetProfile = async (user) => {
+      let { data: profile } = await supabase
+        .from('profiles').select('*').eq('id', user.id).maybeSingle()
+
+      // Profile missing (registered before trigger was added) — create it now
+      if (!profile) {
+        await supabase.from('profiles').insert({
+          id: user.id,
+          email: user.email,
+          username: user.user_metadata?.username || user.email.split('@')[0],
+          token_balance: 50,
+        })
+        const { data: fresh } = await supabase
+          .from('profiles').select('*').eq('id', user.id).maybeSingle()
+        profile = fresh
+      }
+
+      setProfile(profile)
+    }
+
+    // Restore session on page load
     supabase.auth.getSession().then(async ({ data: { session } }) => {
       if (session?.user) {
         setUser(session.user)
-        const { data: profile } = await supabase
-          .from('profiles').select('*').eq('id', session.user.id).maybeSingle()
-        setProfile(profile)
+        await fetchAndSetProfile(session.user)
       }
       setLoading(false)
     })
 
+    // Keep auth in sync (login/logout/token refresh)
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
       if (session?.user) {
         setUser(session.user)
-        const { data: profile } = await supabase
-          .from('profiles').select('*').eq('id', session.user.id).maybeSingle()
-        setProfile(profile)
+        fetchAndSetProfile(session.user) // no await — don't block
       } else {
         logout()
+        setLoading(false)
       }
-      setLoading(false)
     })
 
     return () => subscription.unsubscribe()
