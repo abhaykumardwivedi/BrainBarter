@@ -3,7 +3,7 @@ import { create } from 'zustand'
 const useAuthStore = create((set) => ({
   user: null,
   profile: null,
-  loading: false,
+  loading: true,
   setUser: (user) => set({ user }),
   setProfile: (profile) => set({ profile }),
   setLoading: (loading) => set({ loading }),

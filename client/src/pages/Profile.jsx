@@ -47,7 +47,7 @@ export default function Profile() {
     setSaving(true)
     const { data, error } = await supabase
       .from('profiles').update({ username: form.username, bio: form.bio })
-      .eq('id', profile.id).select().single()
+      .eq('id', profile.id).select().maybeSingle()
     setSaving(false)
     if (error) return toast.error(error.message)
     setProfile(data)

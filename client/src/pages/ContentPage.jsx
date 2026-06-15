@@ -74,6 +74,7 @@ export default function ContentPage() {
 
   const handleUnlock = async () => {
     if (!user) return toast.error('Please login to unlock')
+    if (!profile) return
     if (profile.token_balance < content.token_cost) return toast.error('Insufficient tokens')
     setUnlocking(true)
     const { error } = await supabase.rpc('unlock_content', {
@@ -131,6 +132,7 @@ export default function ContentPage() {
   }
 
   const handleReport = async () => {
+    if (!user) { toast.error('Please login to report'); return }
     if (!reportReason) return toast.error('Please select a reason')
     setReporting(true)
     await supabase.from('reports').insert({ user_id: user.id, content_id: id, reason: reportReason })
@@ -147,6 +149,7 @@ export default function ContentPage() {
     setCitations([])
     try {
       const { data: { session } } = await supabase.auth.getSession()
+      if (!session) { toast.error('Session expired, please login again'); setAiLoading(false); return }
       const res = await fetch(`${import.meta.env.VITE_API_URL}/api/ai/assist`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session.access_token}` },

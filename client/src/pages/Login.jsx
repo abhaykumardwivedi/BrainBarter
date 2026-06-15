@@ -61,7 +61,7 @@ export default function Login() {
         .from('profiles')
         .select('*')
         .eq('id', data.user.id)
-        .single()
+        .maybeSingle()
 
       setProfile(profile)
       toast.success(`Welcome back, ${profile?.username || 'there'}!`)

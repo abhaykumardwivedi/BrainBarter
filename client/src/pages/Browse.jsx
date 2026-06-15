@@ -25,7 +25,8 @@ export default function Browse() {
   // Fetch subjects on mount
   useEffect(() => {
     supabase.from('subjects').select('*').order('semester')
-      .then(({ data }) => {
+      .then(({ data, error }) => {
+        if (error) console.error('Failed to fetch subjects:', error)
         setSubjects(data || [])
         if (data?.length) setSelectedSubject(data[0])
         setLoadingSubjects(false)
@@ -40,7 +41,8 @@ export default function Browse() {
       .from('content')
       .select(`*, creator:profiles(username, is_verified)`)
       .eq('is_published', true)
-      .then(({ data }) => {
+      .then(({ data, error }) => {
+        if (error) console.error('Failed to fetch content:', error)
         // Filter by subject_name if available, otherwise show all
         const filtered = (data || []).filter(c => 
           !c.subject_name || c.subject_name === selectedSubject.name
