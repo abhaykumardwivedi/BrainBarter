@@ -347,6 +347,46 @@ create policy "Admins manage feedback" on feedback
     exists (select 1 from profiles where id = auth.uid() and role = 'admin')
   );
 
+-- ============= AI LOGS =============
+-- aiController.js inserts a row after every AI call for audit/analytics
+create table if not exists ai_logs (
+  id         uuid primary key default gen_random_uuid(),
+  user_id    uuid references profiles(id) on delete set null,
+  content_id uuid references content(id) on delete set null,
+  task_type  text,
+  prompt     text,
+  response   text,
+  created_at timestamptz default now()
+);
+alter table ai_logs enable row level security;
+-- Only the server (service_role) writes; admins can read all logs
+drop policy if exists "No client write to ai_logs" on ai_logs;
+create policy "No client write to ai_logs" on ai_logs
+  for insert with check (false);
+drop policy if exists "Admins read ai_logs" on ai_logs;
+create policy "Admins read ai_logs" on ai_logs
+  for select using (
+    exists (select 1 from profiles where id = auth.uid() and role = 'admin')
+  );
+
+-- ============= PREVIOUS YEAR QUESTIONS (PYQs) =============
+-- examMode in aiController uses this for extra context when generating exam content
+create table if not exists pyqs (
+  id         uuid primary key default gen_random_uuid(),
+  subject_id uuid references subjects(id) on delete cascade,
+  year       integer,
+  text_dump  text not null,
+  created_at timestamptz default now()
+);
+alter table pyqs enable row level security;
+drop policy if exists "Anyone can read pyqs" on pyqs;
+create policy "Anyone can read pyqs" on pyqs for select using (true);
+drop policy if exists "Admins manage pyqs" on pyqs;
+create policy "Admins manage pyqs" on pyqs
+  for all using (
+    exists (select 1 from profiles where id = auth.uid() and role = 'admin')
+  );
+
 -- ============= CONTENT CHUNKS (RAG / AI Tutor) =============
 create table if not exists content_chunks (
   id          bigserial primary key,
