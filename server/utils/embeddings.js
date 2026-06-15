@@ -1,9 +1,9 @@
 const { GoogleGenerativeAI } = require('@google/generative-ai')
 
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY)
+const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY, { apiVersion: 'v1' })
 
 // Gemini's embedding model — 768 dimensions, free with the same API key.
-const EMBED_MODEL = 'text-embedding-005'
+const EMBED_MODEL = 'text-embedding-004'
 const EMBED_DIM = 768
 
 // Embed a single string → number[768]
