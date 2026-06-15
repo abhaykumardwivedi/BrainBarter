@@ -1,14 +1,59 @@
 const { GoogleGenerativeAI } = require('@google/generative-ai')
 
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY)
+const API_KEY     = process.env.GEMINI_API_KEY
+const API_VERSION = process.env.GEMINI_API_VERSION || 'v1beta'
+const genAI       = new GoogleGenerativeAI(API_KEY)
 
-// apiVersion MUST go in the 2nd arg of getGenerativeModel() — the constructor ignores it.
-// gemini-2.0-flash has limit:0 on the free tier; 1.5-flash has real free quota.
-const PRIMARY_MODEL = process.env.GEMINI_MODEL || 'gemini-1.5-flash'
-const API_VERSION   = process.env.GEMINI_API_VERSION || 'v1beta'
+// Preference order. We only ever call models the key actually supports
+// (discovered at runtime), but among those we prefer cheap/high-free-quota
+// flash + lite variants first. gemini-2.0-flash often shows limit:0 on the
+// free tier, so the lite variants (separate quota) come first.
+const PREFERRED = [
+  process.env.GEMINI_MODEL,        // explicit override always wins
+  'gemini-2.5-flash-lite',
+  'gemini-2.0-flash-lite',
+  'gemini-2.5-flash',
+  'gemini-2.0-flash',
+  'gemini-flash-latest',
+].filter(Boolean)
 
-// Tried in order on 429/quota errors so the app keeps working on the free tier.
-const FALLBACK_MODELS = [PRIMARY_MODEL, 'gemini-1.5-flash-8b', 'gemini-1.0-pro']
+// Cache of model names this API key can use with generateContent.
+let _availableModels = null
+
+// Ask Google which models this key supports (REST ListModels). Cached.
+async function getAvailableModels() {
+  if (_availableModels) return _availableModels
+  try {
+    const res = await fetch(
+      `https://generativelanguage.googleapis.com/${API_VERSION}/models?key=${API_KEY}&pageSize=200`
+    )
+    const data = await res.json()
+    const names = (data.models || [])
+      .filter(m => (m.supportedGenerationMethods || []).includes('generateContent'))
+      .map(m => m.name.replace(/^models\//, ''))
+    _availableModels = names.length ? names : null
+    if (_availableModels) console.log('[Gemini] available generateContent models:', _availableModels.join(', '))
+    return _availableModels
+  } catch (err) {
+    console.warn('[Gemini] ListModels failed, falling back to static list:', err.message)
+    return null
+  }
+}
+
+// Build the ordered list of model names to try for this key.
+async function buildModelChain() {
+  const available = await getAvailableModels()
+  if (!available) return PREFERRED // discovery failed — try our best guesses
+  // Preferred-and-available first, then any remaining available flash models.
+  const chain = PREFERRED.filter(m => available.includes(m))
+  for (const m of available) {
+    if (!chain.includes(m) && m.includes('flash')) chain.push(m)
+  }
+  for (const m of available) {
+    if (!chain.includes(m)) chain.push(m)
+  }
+  return chain.length ? chain : available
+}
 
 const systemPrompts = {
   summarize:           'You are an academic assistant. Summarize the following content in 5-7 clear bullet points for a student.',
@@ -23,12 +68,21 @@ const systemPrompts = {
   'study-plan':        'You are an academic assistant. Create a detailed day-by-day study plan based on the subject and number of days provided.',
 }
 
+// Retry on errors that mean "this model won't work, try another" — quota
+// exhaustion (429) or model-not-found/unsupported (404).
+function isRetryable(msg) {
+  return msg.includes('429') || msg.includes('quota') || msg.includes('RESOURCE_EXHAUSTED') ||
+         msg.includes('limit: 0') || msg.includes('404') || msg.includes('not found') ||
+         msg.includes('not supported')
+}
+
 async function callGemini(taskType, contentText, userMessage = '') {
   const systemPrompt = systemPrompts[taskType] || systemPrompts.summarize
   const prompt = `${systemPrompt}\n\nContent:\n${contentText}${userMessage ? `\n\nStudent's question: ${userMessage}` : ''}`
 
+  const chain = await buildModelChain()
   let lastError
-  for (const modelName of FALLBACK_MODELS) {
+  for (const modelName of chain) {
     try {
       const model = genAI.getGenerativeModel(
         { model: modelName },
@@ -38,16 +92,15 @@ async function callGemini(taskType, contentText, userMessage = '') {
       return result.response.text()
     } catch (err) {
       const msg = err.message || ''
-      // Retry with next model only on quota / rate-limit errors
-      if (msg.includes('429') || msg.includes('quota') || msg.includes('RESOURCE_EXHAUSTED') || msg.includes('limit: 0')) {
+      if (isRetryable(msg)) {
         lastError = err
-        console.warn(`[Gemini] ${modelName} quota hit, trying next fallback…`)
+        console.warn(`[Gemini] ${modelName} unavailable (${msg.slice(0, 80)}…), trying next…`)
         continue
       }
       throw err
     }
   }
-  throw lastError
+  throw lastError || new Error('No usable Gemini model found for this API key')
 }
 
-module.exports = { callGemini }
+module.exports = { callGemini, getAvailableModels }
