@@ -24,7 +24,7 @@ import FeedbackButton   from './components/FeedbackButton'
 
 export default function App() {
   const { init } = useThemeStore()
-  const { setUser, setProfile, setLoading } = useAuthStore()
+  const { setUser, setProfile, setLoading, logout } = useAuthStore()
 
   useEffect(() => {
     init()
@@ -37,6 +37,20 @@ export default function App() {
       }
       setLoading(false)
     })
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
+      if (session?.user) {
+        setUser(session.user)
+        const { data: profile } = await supabase
+          .from('profiles').select('*').eq('id', session.user.id).maybeSingle()
+        setProfile(profile)
+      } else {
+        logout()
+      }
+      setLoading(false)
+    })
+
+    return () => subscription.unsubscribe()
   }, [])
 
   return (

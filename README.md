@@ -2,7 +2,7 @@
 
 > A student-powered knowledge marketplace where learners **earn a token currency by teaching and spend it to learn** — supercharged by an AI tutor that answers questions grounded in the actual uploaded study material.
 
-BrainBarter turns studying into a two-sided economy: students upload topic-wise videos and notes, other students unlock them with tokens, and creators cash those tokens out to real money. A Retrieval-Augmented AI layer (Google Gemini) sits on top, reading uploaded PDFs and helping students summarize, simplify, clear doubts, and prepare for exams.
+BrainBarter turns studying into a two-sided economy: students upload topic-wise videos and notes, other students unlock them with tokens, and creators cash those tokens out to real money. A Retrieval-Augmented AI layer (Google Gemini) sits on top, reading uploaded PDFs and helping students summarize, simplify, clear doubts, prepare for exams, and follow a personalized multi-day study plan — powered by secure, atomic server-side transactions and Row-Level Security throughout.
 
 🔗 **Live App:** [brain-barter-zeta.vercel.app](https://brain-barter-zeta.vercel.app)
 
@@ -29,6 +29,7 @@ BrainBarter turns studying into a two-sided economy: students upload topic-wise 
 - **Summarize / Simplify** any piece of content
 - **Generate notes & practice questions** from the material
 - **Exam Mode** — AI-generated **mock tests, revision sheets, expected questions, and final-prep checklists** for a chosen subject and topic (uses previous-year-question context when available)
+- **AI Study Planner** — agentic multi-day revision planner: given a subject and a target number of days (3–30), Gemini generates a structured day-by-day plan with daily goals, subtopics, activities (reading, practice problems, flashcards), and a self-check question per day — planning over time, not just single Q&A
 
 ### 💸 Token Economy & Payments
 - **Buy tokens** through **Razorpay** with server-side HMAC signature verification
@@ -148,6 +149,23 @@ cd client && npm install && npm run dev   # http://localhost:5173
 # Backend
 cd server && npm install && npm run dev   # http://localhost:5000
 ```
+
+---
+
+## ⚙️ Engineering Highlights
+
+These are the non-obvious implementation decisions that make the platform production-grade:
+
+| What | Why it matters |
+|------|---------------|
+| **HMAC-SHA256 Razorpay verification** | Every payment callback is verified server-side using a cryptographic signature — clients cannot fake a successful payment |
+| **Idempotent token crediting** | `credit_purchase()` is a `SECURITY DEFINER` function that checks a unique `payment_id` before crediting — a retried/duplicate webhook can never double-credit tokens |
+| **Row-Level Security on all tables** | PostgreSQL RLS prevents any client from directly editing `token_balance` or `role`; every token movement goes through an audited server-side function |
+| **Atomic withdrawal RPC** | `request_withdrawal()` deducts the balance and creates the withdrawal record in a single atomic DB transaction — no race condition between two concurrent requests |
+| **pgvector semantic search** | RAG retrieval uses an IVFFlat cosine-similarity index (768-dim Gemini embeddings) so answers come from the *actual uploaded material*, not general knowledge |
+| **Cryptographic verification codes** | Email OTP codes are generated with `crypto.randomInt()` (not `Math.random()`), stored server-side in Supabase with 10-minute expiry, and deleted on use |
+| **Creator-only ingestion guard** | The `/api/ai/ingest` endpoint verifies `content.creator_id === req.user.id` before indexing — no one can trigger expensive embedding work on someone else's content |
+| **Agentic Study Planner** | Moves beyond single Q&A: given a subject + N days, the AI generates a full day-by-day revision plan with progressive difficulty, activities, and daily self-checks |
 
 ---
 

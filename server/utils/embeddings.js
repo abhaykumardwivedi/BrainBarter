@@ -3,7 +3,7 @@ const { GoogleGenerativeAI } = require('@google/generative-ai')
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY)
 
 // Gemini's embedding model — 768 dimensions, free with the same API key.
-const EMBED_MODEL = 'text-embedding-004'
+const EMBED_MODEL = 'text-embedding-005'
 const EMBED_DIM = 768
 
 // Embed a single string → number[768]
@@ -23,6 +23,7 @@ async function embedBatch(texts) {
 // Split long text into overlapping word-windows so each chunk is small enough
 // to embed and retrieve precisely. ~220 words/chunk with 40-word overlap.
 function chunkText(text, size = 220, overlap = 40) {
+  if (overlap >= size) throw new Error('Chunk overlap must be less than chunk size')
   const words = text.replace(/\s+/g, ' ').trim().split(' ')
   if (words.length === 0) return []
   const chunks = []

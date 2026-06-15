@@ -1,3 +1,4 @@
+const axios = require('axios')
 const crypto = require('crypto')
 const { createClient } = require('@supabase/supabase-js')
 
@@ -29,7 +30,6 @@ exports.sendVerificationCode = async (req, res) => {
       return res.status(500).json({ error: 'Failed to save code' })
     }
 
-    const { default: axios } = require('axios')
     await axios.post('https://api.sendgrid.com/v3/mail/send', {
       personalizations: [{ to: [{ email }] }],
       from: { email: SENDGRID_FROM, name: 'BrainBarter' },

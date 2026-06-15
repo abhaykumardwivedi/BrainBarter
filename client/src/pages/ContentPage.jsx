@@ -47,7 +47,12 @@ export default function ContentPage() {
     supabase.from('content')
       .select('*, creator:profiles(id, username, avatar_url, is_verified)')
       .eq('id', id).maybeSingle()
-      .then(({ data }) => { setContent(data); setLoading(false) })
+      .then(({ data }) => {
+        setContent(data)
+        setLoading(false)
+        // Creator always has full access to their own content
+        if (data && user && data.creator_id === user.id) setUnlocked(true)
+      })
 
     // Increment views atomically (counts anonymous views too)
     supabase.rpc('increment_views', { content_id: id }).then(() => {})
@@ -72,8 +77,12 @@ export default function ContentPage() {
       .then(({ data }) => { if (data?.[0]?.completed_at) setMarked(true) })
   }, [user, content?.topic_id])
 
+  const isOwner = user && content && content.creator_id === user.id
+
   const handleUnlock = async () => {
     if (!user) return toast.error('Please login to unlock')
+    if (!profile) return
+    if (isOwner) return  // creators never pay for their own content
     if (profile.token_balance < content.token_cost) return toast.error('Insufficient tokens')
     setUnlocking(true)
     const { error } = await supabase.rpc('unlock_content', {
@@ -131,6 +140,7 @@ export default function ContentPage() {
   }
 
   const handleReport = async () => {
+    if (!user) { toast.error('Please login to report'); return }
     if (!reportReason) return toast.error('Please select a reason')
     setReporting(true)
     await supabase.from('reports').insert({ user_id: user.id, content_id: id, reason: reportReason })
@@ -147,6 +157,7 @@ export default function ContentPage() {
     setCitations([])
     try {
       const { data: { session } } = await supabase.auth.getSession()
+      if (!session) { toast.error('Session expired, please login again'); setAiLoading(false); return }
       const res = await fetch(`${import.meta.env.VITE_API_URL}/api/ai/assist`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session.access_token}` },
@@ -204,11 +215,21 @@ export default function ContentPage() {
                     <div className="w-16 h-16 rounded-2xl bg-white/10 flex items-center justify-center mx-auto mb-4">
                       <RiLockLine size={28} className="text-white" />
                     </div>
-                    <p className="text-white font-medium mb-1">Preview ends here</p>
-                    <p className="text-gray-400 text-sm mb-4">Unlock to access full content</p>
-                    <Button onClick={handleUnlock} loading={unlocking} className="shadow-glow">
-                      Unlock for <TokenChip amount={content.token_cost} className="ml-1 bg-white/20 text-white" />
-                    </Button>
+                    {isOwner ? (
+                      <>
+                        <p className="text-white font-medium mb-1">Your content</p>
+                        <p className="text-gray-400 text-sm mb-4">Publish it so students can find and unlock it</p>
+                        <Link to="/dashboard" className="btn-primary">Go to Creator Studio</Link>
+                      </>
+                    ) : (
+                      <>
+                        <p className="text-white font-medium mb-1">Preview ends here</p>
+                        <p className="text-gray-400 text-sm mb-4">Unlock to access full content</p>
+                        <Button onClick={handleUnlock} loading={unlocking} className="shadow-glow">
+                          Unlock for <TokenChip amount={content.token_cost} className="ml-1 bg-white/20 text-white" />
+                        </Button>
+                      </>
+                    )}
                   </div>
                 )}
                 <span className="absolute top-3 left-3">

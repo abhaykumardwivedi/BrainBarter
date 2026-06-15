@@ -1,0 +1,734 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<title>BrainBarter — Complete Code Explanation</title>
+<style>
+* { margin:0; padding:0; box-sizing:border-box; }
+body { font-family: 'Segoe UI', system-ui, sans-serif; font-size: 10pt; color: #1a1a2e; background: #fff; line-height: 1.7; }
+@page { size: A4; margin: 16mm 16mm 16mm 16mm; }
+@page :first { margin-top: 0; }
+
+/* COVER */
+.cover { page-break-after: always; background: linear-gradient(145deg,#0f0c29,#302b63,#24243e); min-height: 100vh; display:flex; flex-direction:column; justify-content:center; padding: 60px; position:relative; }
+.cover h1 { font-size: 52pt; font-weight:800; color:#fff; letter-spacing:-2px; margin-bottom:10px; }
+.cover h1 span { color: #a78bfa; }
+.cover p.tag { font-size: 13pt; color: rgba(255,255,255,0.6); margin-bottom: 40px; max-width: 500px; }
+.cover-pills { display:flex; flex-wrap:wrap; gap:8px; margin-bottom:50px; }
+.cover-pills span { background:rgba(255,255,255,0.09); border:1px solid rgba(255,255,255,0.18); border-radius:100px; padding:4px 13px; font-size:8pt; color:rgba(255,255,255,0.8); }
+.cover-pills span.a { background:rgba(124,58,237,0.25); border-color:rgba(167,139,250,0.4); color:#c4b5fd; }
+.cover-bottom { border-top:1px solid rgba(255,255,255,0.1); padding-top:22px; display:flex; justify-content:space-between; }
+.cover-bottom div { font-size:8pt; color:rgba(255,255,255,0.5); }
+.cover-bottom div strong { color:rgba(255,255,255,0.8); }
+
+/* PAGE BREAK */
+.pb { page-break-before: always; padding-top: 4px; }
+
+/* SECTION HEADER */
+.sh { display:flex; align-items:center; gap:10px; margin-bottom:16px; padding-bottom:10px; border-bottom:2px solid #e5e7eb; }
+.sh-num { width:28px; height:28px; background:linear-gradient(135deg,#7c3aed,#9d4edd); border-radius:8px; display:flex; align-items:center; justify-content:center; font-size:8pt; font-weight:700; color:#fff; flex-shrink:0; }
+.sh-title { font-size:14pt; font-weight:800; color:#111827; letter-spacing:-0.3px; }
+.sh-sub { font-size:8.5pt; color:#9ca3af; margin-left:4px; }
+
+/* FILE SECTION */
+.file-section { margin-bottom:28px; page-break-inside:avoid; }
+.file-header { background:linear-gradient(90deg,#7c3aed,#9d4edd); color:#fff; border-radius:10px 10px 0 0; padding:10px 16px; font-size:9pt; font-weight:700; font-family:monospace; }
+.file-body { border:1px solid #e5e7eb; border-top:none; border-radius:0 0 10px 10px; padding:16px; }
+
+/* CODE */
+.code { background:#0f172a; border-radius:8px; padding:14px 16px; margin:10px 0; overflow:hidden; }
+.code pre { font-family:'Courier New',monospace; font-size:8pt; color:#e2e8f0; line-height:1.8; white-space:pre-wrap; }
+.ck { color:#c084fc; } /* keyword */
+.cs { color:#86efac; } /* string */
+.cc { color:#64748b; } /* comment */
+.cf { color:#67e8f9; } /* function */
+.cn { color:#fbbf24; } /* number/var */
+
+/* CONCEPT BOX */
+.concept { background:#faf5ff; border:1px solid #e9d5ff; border-left:4px solid #7c3aed; border-radius:8px; padding:13px 16px; margin:12px 0; }
+.concept-title { font-size:9pt; font-weight:700; color:#5b21b6; margin-bottom:5px; }
+.concept p, .concept ul { font-size:9pt; color:#4c1d95; line-height:1.65; }
+.concept ul { padding-left:16px; }
+
+/* WHY BOX */
+.why { background:#eff6ff; border:1px solid #bfdbfe; border-left:4px solid #2563eb; border-radius:8px; padding:13px 16px; margin:12px 0; }
+.why-title { font-size:9pt; font-weight:700; color:#1e40af; margin-bottom:5px; }
+.why p, .why ul { font-size:9pt; color:#1e3a8a; line-height:1.65; }
+.why ul { padding-left:16px; }
+
+/* INTERVIEW BOX */
+.interview { background:#f0fdf4; border:1px solid #bbf7d0; border-left:4px solid #16a34a; border-radius:8px; padding:14px 16px; margin:14px 0; }
+.interview-title { font-size:9pt; font-weight:700; color:#166534; margin-bottom:10px; }
+.qa { margin-bottom:10px; }
+.qa-q { font-size:9pt; font-weight:700; color:#14532d; margin-bottom:4px; }
+.qa-a { font-size:9pt; color:#166534; line-height:1.65; }
+
+/* LINE EXPLAIN */
+.line-explain { margin:6px 0; font-size:9pt; color:#374151; line-height:1.65; }
+.line-explain code { font-family:monospace; font-size:8pt; background:#f3f0ff; border:1px solid #e9d5ff; border-radius:4px; padding:1px 5px; color:#5b21b6; }
+.line-explain strong { color:#111827; }
+
+/* TABLE */
+table { width:100%; border-collapse:collapse; margin:12px 0; font-size:9pt; }
+thead tr { background:linear-gradient(90deg,#5b21b6,#7c3aed); color:#fff; }
+thead th { padding:8px 12px; text-align:left; font-weight:600; font-size:8.5pt; }
+tbody tr:nth-child(even) { background:#faf5ff; }
+tbody td { padding:8px 12px; border-bottom:1px solid #e5e7eb; color:#374151; line-height:1.55; vertical-align:top; }
+tbody td:first-child { font-weight:600; color:#111827; white-space:nowrap; }
+
+/* MISC */
+h3 { font-size:11pt; font-weight:700; color:#111827; margin:14px 0 8px; }
+h4 { font-size:10pt; font-weight:700; color:#374151; margin:12px 0 6px; }
+p { font-size:9.5pt; color:#374151; line-height:1.7; margin-bottom:8px; }
+ul.plain { list-style:none; padding:0; margin:0 0 10px; }
+ul.plain li { font-size:9.5pt; color:#374151; padding-left:16px; position:relative; line-height:1.65; margin-bottom:4px; }
+ul.plain li::before { content:'▸'; position:absolute; left:0; color:#7c3aed; font-size:8pt; top:2px; }
+ul.plain li strong { color:#111827; }
+.section { margin-bottom:28px; }
+.toc-item { font-size:9.5pt; color:#374151; padding:4px 0; border-bottom:1px dotted #e5e7eb; display:flex; justify-content:space-between; }
+.toc-item strong { color:#5b21b6; }
+.two-min { background:#0f172a; border-radius:10px; padding:20px 22px; margin:12px 0; color:#e2e8f0; font-size:9.5pt; line-height:1.8; }
+.two-min strong { color:#a78bfa; }
+</style>
+</head>
+<body>
+
+<!-- COVER -->
+<div class="cover">
+  <div style="font-size:8pt;color:#a78bfa;text-transform:uppercase;letter-spacing:.1em;margin-bottom:24px;">Complete Code Explanation &amp; Interview Preparation Guide</div>
+  <h1>Brain<span>Barter</span></h1>
+  <p class="tag">Every file. Every function. Every line. Everything you need to explain this project like you coded it from scratch.</p>
+  <div class="cover-pills">
+    <span class="a">RAG Pipeline</span><span class="a">pgvector</span><span class="a">HMAC Payments</span><span class="a">RLS Security</span>
+    <span>React 19</span><span>Node.js</span><span>Express</span><span>Supabase</span><span>PostgreSQL</span>
+    <span>Google Gemini</span><span>Razorpay</span><span>SendGrid</span><span>Zustand</span><span>Vercel · Render</span>
+  </div>
+  <div class="cover-bottom">
+    <div><strong>Project</strong><br/>BrainBarter — P2P Learning Marketplace</div>
+    <div><strong>Developer</strong><br/>Abhay Kumar Dwivedi</div>
+    <div><strong>Live</strong><br/>brain-barter-zeta.vercel.app</div>
+    <div><strong>Sections</strong><br/>22 sections · 40 Interview Q&amp;As</div>
+  </div>
+</div>
+
+<!-- TABLE OF CONTENTS -->
+<div class="section">
+  <div class="sh"><div class="sh-num">📋</div><div class="sh-title">Table of Contents</div></div>
+  <div class="toc-item"><span><strong>1.</strong> Concepts You Must Know (REST, JWT, CORS, HMAC, RAG, RLS, Zustand…)</span></div>
+  <div class="toc-item"><span><strong>2.</strong> SERVER: index.js — Entry point, Express setup, CORS, routing</span></div>
+  <div class="toc-item"><span><strong>3.</strong> SERVER: verifyToken.js — JWT middleware, service key</span></div>
+  <div class="toc-item"><span><strong>4.</strong> SERVER: authController.js — OTP generation, SendGrid, Supabase upsert</span></div>
+  <div class="toc-item"><span><strong>5.</strong> SERVER: paymentController.js — Razorpay, HMAC, idempotent credit</span></div>
+  <div class="toc-item"><span><strong>6.</strong> SERVER: gemini.js — System prompts, callGemini, model selection</span></div>
+  <div class="toc-item"><span><strong>7.</strong> SERVER: embeddings.js — embedText, chunkText, overlap logic</span></div>
+  <div class="toc-item"><span><strong>8.</strong> SERVER: aiController.js — RAG ingestion, retrieval, examMode</span></div>
+  <div class="toc-item"><span><strong>9.</strong> CLIENT: supabase.js — createClient, anon key, env vars</span></div>
+  <div class="toc-item"><span><strong>10.</strong> CLIENT: authStore.js — Zustand store, global state</span></div>
+  <div class="toc-item"><span><strong>11.</strong> CLIENT: themeStore.js — persist middleware, dark mode</span></div>
+  <div class="toc-item"><span><strong>12.</strong> CLIENT: ProtectedRoute.jsx — auth guard, admin guard, redirect</span></div>
+  <div class="toc-item"><span><strong>13.</strong> CLIENT: App.jsx — BrowserRouter, Routes, session restore</span></div>
+  <div class="toc-item"><span><strong>14.</strong> CLIENT: Upload.jsx — file upload flow, autocomplete, RAG ingest trigger</span></div>
+  <div class="toc-item"><span><strong>15.</strong> CLIENT: ContentPage.jsx — unlock, rating, AI panel, citations</span></div>
+  <div class="toc-item"><span><strong>16.</strong> CLIENT: ExamMode.jsx — 5 tabs, study planner, AI exam API</span></div>
+  <div class="toc-item"><span><strong>17.</strong> CLIENT: Wallet.jsx — buy tokens, Razorpay checkout, withdrawal</span></div>
+  <div class="toc-item"><span><strong>18.</strong> CLIENT: FeedbackButton.jsx — floating modal, anonymous insert</span></div>
+  <div class="toc-item"><span><strong>19.</strong> Database (COMPLETE_SETUP.sql) — RLS, SECURITY DEFINER, pgvector</span></div>
+  <div class="toc-item"><span><strong>20.</strong> 40 Interview Questions &amp; Answers</span></div>
+  <div class="toc-item"><span><strong>21.</strong> "Explain the project in 2 minutes" — memorisable script</span></div>
+</div>
+
+<!-- SECTION 1: CONCEPTS -->
+<div class="section pb">
+  <div class="sh"><div class="sh-num">01</div><div class="sh-title">Concepts You Must Know <span class="sh-sub">— Before any interview</span></div></div>
+
+  <table>
+    <thead><tr><th>Concept</th><th>What it is</th><th>Why we used it</th><th>Alternatives &amp; why not</th></tr></thead>
+    <tbody>
+      <tr><td>REST API</td><td>A style of building web APIs where each URL represents a resource and HTTP methods (GET/POST/PUT/DELETE) define actions. Stateless — each request carries all needed info.</td><td>Our Express server exposes REST endpoints like POST /api/payment/verify. Simple, well-understood, works with any frontend.</td><td>GraphQL (overkill for our use case), gRPC (needs special clients). REST was simplest.</td></tr>
+      <tr><td>Node.js</td><td>JavaScript runtime that lets you run JS on the server (outside the browser). Uses V8 engine. Single-threaded but non-blocking via event loop.</td><td>Same language as frontend (React), huge ecosystem (npm), excellent for I/O-heavy tasks like calling APIs.</td><td>Python/Django, Java/Spring — different language adds complexity. PHP — outdated ecosystem.</td></tr>
+      <tr><td>Express</td><td>Minimal web framework for Node.js. Adds clean routing (app.get, app.post), middleware support, error handling on top of raw Node http module.</td><td>Raw Node.js HTTP is verbose. Express makes routes readable in 2 lines.</td><td>Fastify (faster but less docs), Koa (smaller community), Hapi (opinionated). Express has most tutorials/help.</td></tr>
+      <tr><td>Middleware</td><td>Function that runs between a request arriving and the handler running. Has access to req, res, and next(). Calling next() passes control forward.</td><td>Our verifyToken middleware authenticates every protected route in one place — no repeated auth code in each controller.</td><td>Could inline auth in every handler — but that's copy-paste and error-prone.</td></tr>
+      <tr><td>JWT</td><td>JSON Web Token — a cryptographically signed string containing user info (id, email). Format: header.payload.signature. Cannot be faked without the secret key.</td><td>Supabase issues JWTs on login. Our server validates them to know who is making each request. Stateless — no session DB needed.</td><td>Session cookies (need a session store), API keys (don't expire automatically).</td></tr>
+      <tr><td>CORS</td><td>Cross-Origin Resource Sharing. Browser security policy that blocks JS from calling a different domain unless the server explicitly allows it via response headers.</td><td>Our React app (vercel.app) calls our API (render.com) — different domains. Without CORS config, browsers block every request.</td><td>No alternative — CORS is enforced by browsers, you must configure it.</td></tr>
+      <tr><td>HMAC</td><td>Hash-based Message Authentication Code. Takes data + secret key → produces a fixed-length hash. If data or key changes, hash changes completely.</td><td>We use HMAC-SHA256 to verify Razorpay payment signatures. Proves the payment notification came from Razorpay and wasn't tampered with.</td><td>No real alternative for this use case — Razorpay requires HMAC verification.</td></tr>
+      <tr><td>Idempotency</td><td>An operation that produces the same result no matter how many times you call it. f(f(x)) = f(x). Critical for payment systems where retries happen.</td><td>Our credit_purchase() DB function checks UNIQUE(payment_id) so a repeated Razorpay webhook never double-credits tokens.</td><td>Without it: if Razorpay retries (it does), users get tokens twice for one payment.</td></tr>
+      <tr><td>RAG</td><td>Retrieval-Augmented Generation. Instead of answering from training data, the AI retrieves relevant documents first, then generates an answer grounded in those docs.</td><td>Standard Gemini answers from general knowledge. We want it to answer from the student's actual uploaded PDF. RAG makes that possible.</td><td>Fine-tuning (expensive, needs lots of data). Prompt stuffing entire PDF (too large). RAG is the right middle ground.</td></tr>
+      <tr><td>Embeddings</td><td>Converting text to a list of numbers (a vector) that captures meaning. Similar text → similar numbers. Generated by an ML model.</td><td>We embed each PDF chunk and each question using Gemini's text-embedding-004. Then find closest chunks to the question using cosine similarity.</td><td>OpenAI embeddings (paid, different vendor), sentence-transformers (self-hosted, complex). Gemini embeddings are free with our existing API key.</td></tr>
+      <tr><td>pgvector</td><td>PostgreSQL extension that adds a vector data type and similarity search operators. Lets you store 768 numbers per row and find nearest neighbours efficiently.</td><td>We store Gemini embeddings in PostgreSQL and query them with cosine similarity to find relevant PDF chunks.</td><td>Pinecone/Weaviate (separate vector DB services, extra cost, extra infrastructure). pgvector keeps everything in one DB.</td></tr>
+      <tr><td>Cosine Similarity</td><td>Measures the angle between two vectors. 1 = same direction (identical meaning), 0 = perpendicular (unrelated), -1 = opposite. Better than keyword search because it understands semantic meaning.</td><td>We find PDF chunks most semantically similar to a student's question even if they use different words.</td><td>Dot product (doesn't normalise for length), Euclidean distance (less suited for text). Cosine is standard for text similarity.</td></tr>
+      <tr><td>Row-Level Security</td><td>PostgreSQL feature where each table has SQL policies controlling which rows each user can SELECT/INSERT/UPDATE/DELETE. Enforced at DB level regardless of how data is accessed.</td><td>Clients access Supabase directly. Without RLS, any user could UPDATE their own token_balance. RLS blocks this at DB level.</td><td>Application-level checks only (can be bypassed if you hit DB directly). RLS cannot be bypassed — it's in the DB engine.</td></tr>
+      <tr><td>SECURITY DEFINER</td><td>A PostgreSQL function attribute meaning "run this function with the privileges of the function's owner, not the caller." Allows bypassing RLS safely for specific audited operations.</td><td>Our credit_purchase() function needs to update token_balance (blocked by RLS for users). SECURITY DEFINER lets it do so safely — only this specific function can, not arbitrary SQL.</td><td>Could give users elevated DB permissions — but that defeats the security model.</td></tr>
+      <tr><td>Zustand</td><td>Tiny React state management library. Creates a global store any component can subscribe to. No boilerplate — just define state and setters.</td><td>User auth state (user, profile) needs to be accessible from Navbar, ContentPage, Wallet, etc. Zustand shares it without prop drilling.</td><td>Redux (too much boilerplate), React Context (re-renders all consumers on any change). Zustand is minimal and performant.</td></tr>
+      <tr><td>Supabase</td><td>Open-source Firebase alternative. Provides PostgreSQL database, Auth (JWT), Storage (S3-compatible), and auto-generated APIs — all in one.</td><td>Gets us database + auth + file storage without managing servers. Supports RLS and pgvector natively.</td><td>Firebase (NoSQL, no SQL queries, no pgvector), PlanetScale (MySQL, no pgvector), self-hosted PostgreSQL (complex ops).</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<!-- SECTION 2: server/index.js -->
+<div class="section pb">
+  <div class="sh"><div class="sh-num">02</div><div class="sh-title">server/index.js <span class="sh-sub">— The entry point of the entire backend</span></div></div>
+  <div class="file-section">
+    <div class="file-header">📄 server/index.js</div>
+    <div class="file-body">
+      <div class="code"><pre><span class="ck">require</span>(<span class="cs">'dotenv'</span>).config()</pre></div>
+      <p class="line-explain"><strong>What it does:</strong> Loads the <code>.env</code> file and puts every key=value pair into <code>process.env</code>. So after this line, <code>process.env.GEMINI_API_KEY</code> exists. Without this, all env vars would be <code>undefined</code> and every API call would fail. <strong>Why first line?</strong> Other modules read <code>process.env</code> when they load — if dotenv runs after them, they'd see undefined.</p>
+
+      <div class="code"><pre><span class="ck">const</span> express = <span class="ck">require</span>(<span class="cs">'express'</span>)
+<span class="ck">const</span> app = <span class="cf">express</span>()</pre></div>
+      <p class="line-explain"><strong>What it does:</strong> Imports Express and creates an application instance. <code>app</code> is the object you attach routes and middleware to. Think of it as the blank restaurant — nothing in it yet, just the building.</p>
+
+      <div class="code"><pre>app.<span class="cf">use</span>(<span class="cf">cors</span>({
+  origin: (origin, callback) => {
+    <span class="ck">const</span> allowedOrigins = [
+      process.env.CLIENT_URL,
+      <span class="cs">'https://brain-barter-zeta.vercel.app'</span>,
+      <span class="cn">/\.vercel\.app$/</span>
+    ]
+    <span class="ck">if</span> (!origin || allowedOrigins.<span class="cf">some</span>(o => o <span class="ck">instanceof</span> RegExp ? o.<span class="cf">test</span>(origin) : o === origin)) {
+      <span class="cf">callback</span>(<span class="ck">null</span>, <span class="ck">true</span>)
+    } <span class="ck">else</span> {
+      <span class="cf">callback</span>(<span class="ck">new</span> <span class="cf">Error</span>(<span class="cs">'Not allowed by CORS'</span>))
+    }
+  }
+}))</pre></div>
+      <p class="line-explain"><strong>What CORS does:</strong> Browsers block JavaScript from calling a different domain (e.g. your React app on vercel.app calling your API on render.com) unless the server says "I allow this origin." The <code>cors()</code> middleware adds the right response headers automatically.</p>
+      <p class="line-explain"><strong>Why a function instead of a string?</strong> We have multiple allowed origins — the deployed URL, the environment variable (for local dev), and a RegExp pattern that matches ANY Vercel preview URL (e.g. brainbarter-abc123.vercel.app). A function lets us check all three.</p>
+      <p class="line-explain"><strong><code>!origin</code></strong> means "no origin header" — this happens for server-to-server requests (Postman, curl). We allow those too.</p>
+      <p class="line-explain"><strong><code>callback(null, true)</code></strong> = allowed. <strong><code>callback(new Error(...))</code></strong> = blocked.</p>
+
+      <div class="code"><pre>app.<span class="cf">use</span>(express.<span class="cf">json</span>())</pre></div>
+      <p class="line-explain">HTTP request bodies arrive as raw bytes. This middleware parses JSON bodies automatically so you can write <code>req.body.email</code> instead of manually parsing. Without this, <code>req.body</code> would be undefined for all POST requests.</p>
+
+      <div class="code"><pre>app.<span class="cf">get</span>(<span class="cs">'/health'</span>, (_, res) => res.<span class="cf">json</span>({ status: <span class="cs">'ok'</span> }))</pre></div>
+      <p class="line-explain">A health check endpoint. Render and uptime monitoring services ping this URL periodically. If they get a 200 response, the server is alive. <code>_</code> instead of <code>req</code> is a convention meaning "I don't use this parameter."</p>
+
+      <div class="code"><pre>app.<span class="cf">use</span>(<span class="cs">'/api/ai'</span>, aiRoutes)
+app.<span class="cf">use</span>(<span class="cs">'/api/auth'</span>, authRoutes)
+app.<span class="cf">use</span>(<span class="cs">'/api/payment'</span>, paymentRoutes)</pre></div>
+      <p class="line-explain"><strong>Route mounting.</strong> Any request starting with <code>/api/ai</code> is forwarded to the <code>aiRoutes</code> file to handle. This is separation of concerns — all AI logic in one file, all payment logic in another. Makes the codebase maintainable.</p>
+
+      <div class="code"><pre>app.<span class="cf">use</span>((err, req, res, next) => {
+  console.<span class="cf">error</span>(err.stack)
+  res.<span class="cf">status</span>(<span class="cn">500</span>).<span class="cf">json</span>({ error: <span class="cs">'Internal server error'</span> })
+})</pre></div>
+      <p class="line-explain"><strong>Global error handler.</strong> Express recognises a middleware with 4 parameters as an error handler. If any route throws an uncaught error, Express passes it here instead of crashing. We log the stack trace (for debugging) and return a generic 500 response (never expose internal errors to clients).</p>
+
+      <div class="code"><pre><span class="ck">const</span> PORT = process.env.PORT || <span class="cn">5000</span>
+app.<span class="cf">listen</span>(PORT, () => console.<span class="cf">log</span>(<span class="cs">`Server running on port ${PORT}`</span>))</pre></div>
+      <p class="line-explain"><code>process.env.PORT</code> is set by Render (the hosting platform) at runtime. The <code>|| 5000</code> fallback is for local development where PORT isn't set. <code>app.listen()</code> starts the HTTP server — after this line, the server accepts incoming requests.</p>
+
+      <div class="interview">
+        <div class="interview-title">🎯 Interview Questions — index.js</div>
+        <div class="qa"><div class="qa-q">Q: Why did you put dotenv.config() as the very first line?</div><div class="qa-a">A: Other modules read process.env when they're first imported. If dotenv ran after those imports, they'd see undefined for all environment variables. It must run before any other require() statement.</div></div>
+        <div class="qa"><div class="qa-q">Q: What is CORS and why did you need to configure it?</div><div class="qa-a">A: CORS is a browser security feature that blocks JavaScript from calling a different domain than the one serving the page. My React app runs on vercel.app but the API is on render.com — different domains. Without CORS configuration, every API call from the browser would be blocked. The server adds response headers like Access-Control-Allow-Origin to tell the browser which origins are permitted.</div></div>
+        <div class="qa"><div class="qa-q">Q: What does the global error handler do and why is it at the bottom?</div><div class="qa-a">A: It catches any unhandled errors thrown in route handlers and returns a clean 500 response instead of crashing the server. It must be defined LAST because Express processes middleware in order — if it were first, it would never see errors thrown by routes registered after it. The 4-parameter signature (err, req, res, next) is how Express identifies it as an error handler.</div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- SECTION 3: verifyToken -->
+<div class="section pb">
+  <div class="sh"><div class="sh-num">03</div><div class="sh-title">server/middleware/verifyToken.js <span class="sh-sub">— JWT authentication middleware</span></div></div>
+  <div class="file-section">
+    <div class="file-header">📄 server/middleware/verifyToken.js</div>
+    <div class="file-body">
+      <div class="concept"><div class="concept-title">💡 What is a Middleware?</div><p>Middleware is a function that sits between the HTTP request arriving and your actual route handler running. It has three jobs: inspect/modify the request, inspect/modify the response, or call next() to pass control to the next middleware/handler. If you DON'T call next(), the request just hangs — the client gets no response.</p></div>
+
+      <div class="code"><pre><span class="ck">const</span> supabase = <span class="cf">createClient</span>(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_KEY)</pre></div>
+      <p class="line-explain"><strong>Service key vs Anon key:</strong> There are two Supabase keys. The <strong>anon key</strong> (used in React) is public — it's safe to expose in frontend code because Row-Level Security controls what it can do. The <strong>service key</strong> has full database access — it bypasses RLS entirely. It MUST stay on the server only. We use the service key here because this middleware needs to validate any JWT, which requires elevated access.</p>
+
+      <div class="code"><pre><span class="ck">async function</span> <span class="cf">verifyToken</span>(req, res, next) {
+  <span class="ck">const</span> auth = req.headers.authorization
+  <span class="ck">if</span> (!auth || !auth.<span class="cf">startsWith</span>(<span class="cs">'Bearer '</span>)) {
+    <span class="ck">return</span> res.<span class="cf">status</span>(<span class="cn">401</span>).<span class="cf">json</span>({ error: <span class="cs">'Missing token'</span> })
+  }
+  <span class="ck">const</span> token = auth.<span class="cf">split</span>(<span class="cs">' '</span>)[<span class="cn">1</span>]
+  <span class="ck">const</span> { data: { user }, error } = <span class="ck">await</span> supabase.auth.<span class="cf">getUser</span>(token)
+  <span class="ck">if</span> (error || !user) <span class="ck">return</span> res.<span class="cf">status</span>(<span class="cn">401</span>).<span class="cf">json</span>({ error: <span class="cs">'Invalid token'</span> })
+  req.user = user
+  <span class="cf">next</span>()
+}</pre></div>
+      <p class="line-explain"><strong><code>req.headers.authorization</code></strong> — HTTP headers are key-value pairs sent with every request. The <code>Authorization</code> header follows the format <code>Bearer &lt;token&gt;</code> by convention.</p>
+      <p class="line-explain"><strong><code>auth.split(' ')[1]</code></strong> — "Bearer eyJhbGci..." split by space gives ["Bearer", "eyJhbGci..."]. Index [1] extracts just the JWT string.</p>
+      <p class="line-explain"><strong><code>supabase.auth.getUser(token)</code></strong> — sends the JWT to Supabase's auth server, which verifies the cryptographic signature and returns the user object if valid. This is the source of truth — you can't fake a JWT without Supabase's secret signing key.</p>
+      <p class="line-explain"><strong><code>req.user = user</code></strong> — attaches the verified user object to the request. Every downstream handler can now trust <code>req.user.id</code> — it's the real authenticated user's ID.</p>
+      <p class="line-explain"><strong><code>next()</code></strong> — tells Express "authentication passed, proceed to the actual route handler." Without this call, the request would hang forever.</p>
+
+      <div class="interview">
+        <div class="interview-title">🎯 Interview Questions — verifyToken</div>
+        <div class="qa"><div class="qa-q">Q: What is a JWT and how does your server verify it?</div><div class="qa-a">A: JWT stands for JSON Web Token. It's a base64-encoded string with three parts separated by dots: a header (algorithm info), a payload (user data like id and email), and a signature. The signature is created by hashing the header+payload with a secret key. When our server receives a JWT, we call supabase.auth.getUser(token) which sends it to Supabase's auth server — they verify the signature using their secret key and return the user if it's valid. A forged or expired JWT fails verification and we return 401.</div></div>
+        <div class="qa"><div class="qa-q">Q: Why is the service key used here instead of the anon key?</div><div class="qa-a">A: The anon key respects Row-Level Security — it can only do what the RLS policies allow for unauthenticated users. Verifying a JWT requires calling supabase.auth.getUser() which needs elevated privileges. The service key bypasses RLS and has full access. It's only used on the server (never exposed to the browser) precisely because it's so powerful.</div></div>
+        <div class="qa"><div class="qa-q">Q: What happens if someone sends a request without a token?</div><div class="qa-a">A: The middleware checks if the Authorization header exists and starts with "Bearer ". If not, it immediately returns a 401 Unauthorized response and does NOT call next() — so the actual route handler never runs. The request is dead at the middleware stage.</div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- SECTION 4: authController -->
+<div class="section pb">
+  <div class="sh"><div class="sh-num">04</div><div class="sh-title">server/controllers/authController.js <span class="sh-sub">— Email OTP verification</span></div></div>
+  <div class="file-section">
+    <div class="file-header">📄 server/controllers/authController.js</div>
+    <div class="file-body">
+      <div class="code"><pre><span class="ck">const</span> code = (crypto.<span class="cf">randomInt</span>(<span class="cn">0</span>, <span class="cn">1000000</span>)).<span class="cf">toString</span>().<span class="cf">padStart</span>(<span class="cn">6</span>, <span class="cs">'0'</span>)</pre></div>
+      <p class="line-explain"><strong><code>crypto.randomInt()</code></strong> uses the OS's cryptographically secure random number generator (CSPRNG). It is truly unpredictable. <strong>Why not Math.random()?</strong> Math.random() is a pseudo-random number generator — its output can theoretically be predicted if you know the seed. For security codes, predictability is dangerous. <code>crypto</code> is Node's built-in module — no install needed.</p>
+      <p class="line-explain"><strong><code>.padStart(6, '0')</code></strong> — if randomInt gives 42, toString gives "42", padStart makes it "000042". Ensures the code is always exactly 6 characters.</p>
+
+      <div class="code"><pre><span class="ck">const</span> expires = <span class="ck">new</span> <span class="cf">Date</span>(Date.<span class="cf">now</span>() + <span class="cn">10</span> * <span class="cn">60</span> * <span class="cn">1000</span>).<span class="cf">toISOString</span>()</pre></div>
+      <p class="line-explain"><code>Date.now()</code> = current time in milliseconds. <code>10 * 60 * 1000</code> = 10 minutes in milliseconds. Adding them gives the expiry timestamp. <code>.toISOString()</code> converts to "2024-01-01T12:10:00.000Z" format — what PostgreSQL expects for timestamps.</p>
+
+      <div class="code"><pre><span class="ck">await</span> supabase.<span class="cf">from</span>(<span class="cs">'email_verification_codes'</span>)
+  .<span class="cf">upsert</span>({ email, code, expires_at: expires }, { onConflict: <span class="cs">'email'</span> })</pre></div>
+      <p class="line-explain"><strong><code>upsert</code></strong> = INSERT if email doesn't exist, UPDATE if it does. This handles "resend code" gracefully — replaces the old code with a fresh one instead of inserting a duplicate. <code>onConflict: 'email'</code> specifies which column to check for conflict.</p>
+      <p class="line-explain"><strong>Why Supabase table instead of a variable?</strong> Our server runs on Render's free tier which sleeps after inactivity. When it wakes up, all in-memory variables are gone. Storing codes in the database survives restarts. Also critical for multi-instance deployments.</p>
+
+      <div class="code"><pre><span class="cc">// verifyCode: check expiry, compare, delete on success</span>
+<span class="ck">if</span> (<span class="ck">new</span> <span class="cf">Date</span>() > <span class="ck">new</span> <span class="cf">Date</span>(data.expires_at)) {
+  <span class="ck">await</span> supabase.<span class="cf">from</span>(<span class="cs">'email_verification_codes'</span>).<span class="cf">delete</span>().<span class="cf">eq</span>(<span class="cs">'email'</span>, email)
+  <span class="ck">return</span> res.<span class="cf">status</span>(<span class="cn">400</span>).<span class="cf">json</span>({ error: <span class="cs">'Code expired'</span> })
+}
+<span class="ck">if</span> (data.code !== code) <span class="ck">return</span> res.<span class="cf">status</span>(<span class="cn">400</span>).<span class="cf">json</span>({ error: <span class="cs">'Invalid code'</span> })
+<span class="ck">await</span> supabase.<span class="cf">from</span>(<span class="cs">'email_verification_codes'</span>).<span class="cf">delete</span>().<span class="cf">eq</span>(<span class="cs">'email'</span>, email)</pre></div>
+      <p class="line-explain"><strong>Expiry check:</strong> Compare current time with stored expiry. If expired, delete the code (clean up) and reject. <strong>Code check:</strong> Simple string equality. <strong>Delete on success:</strong> OTPs are single-use. After verification, immediately delete so the same code can't be used again (prevents replay attacks).</p>
+
+      <div class="interview">
+        <div class="interview-title">🎯 Interview Questions — authController</div>
+        <div class="qa"><div class="qa-q">Q: Why did you use crypto.randomInt instead of Math.random for generating OTP codes?</div><div class="qa-a">A: Math.random() is a pseudo-random generator — it uses a deterministic algorithm seeded by a value. In theory, if an attacker knows the seed or observes enough outputs, they can predict future values. For security-critical codes like OTPs, this is unacceptable. crypto.randomInt() uses the OS's cryptographically secure random number generator (like /dev/urandom on Linux), which is truly unpredictable. Node's built-in crypto module is always available — no extra dependencies.</div></div>
+        <div class="qa"><div class="qa-q">Q: Why store verification codes in the database instead of a JavaScript variable or Map?</div><div class="qa-a">A: Our backend runs on Render's free tier which sleeps after 15 minutes of inactivity. When it wakes up, all JavaScript memory is reset — any in-memory Map would be empty. Users who requested a code before the sleep would find their code gone. By storing codes in Supabase, they persist across restarts. This is also necessary for horizontal scaling — if you run multiple server instances, an in-memory Map on instance 1 is invisible to instance 2.</div></div>
+        <div class="qa"><div class="qa-q">Q: Why delete the code after successful verification?</div><div class="qa-a">A: OTPs must be single-use. If we didn't delete after verification, an attacker who observed the code (e.g., shoulder surfing) could verify again later. Deleting immediately after use prevents replay attacks. Expired codes are also deleted when detected to keep the table clean.</div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- SECTION 5: paymentController -->
+<div class="section pb">
+  <div class="sh"><div class="sh-num">05</div><div class="sh-title">server/controllers/paymentController.js <span class="sh-sub">— HMAC-verified Razorpay payments</span></div></div>
+  <div class="file-section">
+    <div class="file-header">📄 server/controllers/paymentController.js</div>
+    <div class="file-body">
+      <div class="concept"><div class="concept-title">💡 Why Two Steps? (createOrder → verifyPayment)</div><p>If payment and token-crediting happened in one client-side step, a user could modify the JavaScript to say "charge ₹1 but credit 10,000 tokens." By splitting: (1) server creates order and locks the token amount in order.notes, (2) Razorpay handles the actual payment on their secure servers, (3) server verifies the payment is real using HMAC before crediting exactly what the order specified — the client can never alter the token amount.</p></div>
+
+      <div class="code"><pre><span class="ck">const</span> order = <span class="ck">await</span> razorpay.orders.<span class="cf">create</span>({
+  amount: inr * <span class="cn">100</span>,  <span class="cc">// Razorpay uses paise (₹1 = 100 paise)</span>
+  currency: <span class="cs">'INR'</span>,
+  receipt: <span class="cs">`bb_${Date.now()}`</span>,  <span class="cc">// unique receipt ID</span>
+  notes: { user_id: req.user.id, tokens: String(tokens), inr: String(inr) },
+})</pre></div>
+      <p class="line-explain"><code>notes</code> is a key-value store attached to the Razorpay order. We store how many tokens this payment buys here on the server. When the payment completes, we fetch the order and read notes.tokens — the client cannot modify this value.</p>
+
+      <div class="code"><pre><span class="ck">const</span> expected = crypto
+  .<span class="cf">createHmac</span>(<span class="cs">'sha256'</span>, process.env.RAZORPAY_KEY_SECRET)
+  .<span class="cf">update</span>(<span class="cs">`${razorpay_order_id}|${razorpay_payment_id}`</span>)
+  .<span class="cf">digest</span>(<span class="cs">'hex'</span>)
+
+<span class="ck">if</span> (expected !== razorpay_signature) {
+  <span class="ck">return</span> res.<span class="cf">status</span>(<span class="cn">400</span>).<span class="cf">json</span>({ error: <span class="cs">'Invalid payment signature'</span> })
+}</pre></div>
+      <p class="line-explain"><strong>HMAC step by step:</strong></p>
+      <ul class="plain">
+        <li><code>createHmac('sha256', secret)</code> — creates an HMAC generator using SHA256 hashing algorithm and your Razorpay secret as the key</li>
+        <li><code>.update(`order_id|payment_id`)</code> — feeds the data to hash. The pipe character | is Razorpay's separator</li>
+        <li><code>.digest('hex')</code> — finalises and returns the hash as a hex string</li>
+        <li>Razorpay does the same computation on their end and sends the result as <code>razorpay_signature</code></li>
+        <li>If they match → payment is authentic. If not → someone tampered with the data</li>
+      </ul>
+
+      <div class="code"><pre><span class="ck">const</span> { data: balance, error } = <span class="ck">await</span> supabase.<span class="cf">rpc</span>(<span class="cs">'credit_purchase'</span>, {
+  p_user_id: req.user.id, p_tokens: tokens, p_payment_id: razorpay_payment_id,
+})</pre></div>
+      <p class="line-explain"><strong>Why an RPC instead of a direct UPDATE?</strong> <code>credit_purchase()</code> is a SECURITY DEFINER PostgreSQL function that: (1) checks if payment_id already exists (idempotent — prevents double-credit), (2) adds tokens to the user's balance, (3) inserts a transaction record. All three steps in one atomic database transaction — either all succeed or all roll back. A direct UPDATE would require multiple queries and could leave the DB in a broken state if the server crashed between them.</p>
+
+      <div class="interview">
+        <div class="interview-title">🎯 Interview Questions — Payments</div>
+        <div class="qa"><div class="qa-q">Q: Explain the full Razorpay payment flow in your app, end to end.</div><div class="qa-a">A: (1) User clicks "Buy Tokens" → client sends amount to our POST /api/payment/create-order. (2) Server creates a Razorpay order, storing how many tokens this buys in order.notes, and returns the orderId. (3) Client opens the Razorpay checkout popup using the orderId. User enters card/UPI details — this happens entirely on Razorpay's servers. (4) On success, Razorpay gives the client three values: order_id, payment_id, and a signature. (5) Client sends all three to our POST /api/payment/verify. (6) Server recomputes the HMAC signature using our secret key. If it matches Razorpay's signature, the payment is authentic. (7) Server calls credit_purchase() RPC to atomically add tokens.</div></div>
+        <div class="qa"><div class="qa-q">Q: What is HMAC and why is it used for payment verification?</div><div class="qa-a">A: HMAC stands for Hash-based Message Authentication Code. You combine a message with a secret key and run it through a hash function (SHA256 in our case). The result is a fixed-length string that uniquely represents that message+key combination. Razorpay computes HMAC(order_id + payment_id, your_secret) and sends it as the signature. Our server does the same computation. If they match, we know: (1) the message wasn't tampered with — any change would produce a different hash, and (2) it came from Razorpay — only they and we know the secret key.</div></div>
+        <div class="qa"><div class="qa-q">Q: What prevents a user from paying once and getting tokens twice?</div><div class="qa-a">A: Our credit_purchase() database function has a UNIQUE constraint on the payment_id column in the purchases table. The first call inserts the payment record and credits tokens. If the same payment_id arrives again (Razorpay retries, user double-submits, network glitch), the INSERT hits the unique constraint and the function returns without crediting again. This property — same input, same output, no matter how many times called — is called idempotency.</div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- SECTION 6: gemini.js -->
+<div class="section pb">
+  <div class="sh"><div class="sh-num">06</div><div class="sh-title">server/utils/gemini.js <span class="sh-sub">— AI prompt engineering and Gemini calls</span></div></div>
+  <div class="file-section">
+    <div class="file-header">📄 server/utils/gemini.js</div>
+    <div class="file-body">
+      <div class="concept"><div class="concept-title">💡 What is a System Prompt?</div><p>When calling an LLM (Large Language Model), you provide two things: a system prompt (instructions telling the AI what role to play and how to behave) and the actual content/question. The system prompt is invisible to the end user. Ours say things like "You are an academic assistant. Summarize in 5-7 bullet points." This constrains the AI to give structured, relevant responses instead of generic conversation.</p></div>
+
+      <div class="code"><pre><span class="ck">const</span> systemPrompts = {
+  summarize: <span class="cs">'Summarize in 5-7 bullet points...'</span>,
+  doubt: <span class="cs">'Content below is numbered passages [1],[2]... Answer using ONLY these. Cite inline like [1].'</span>,
+  <span class="cs">'mock-test'</span>: <span class="cs">'Create a 10-question MCQ test with 4 options each...'</span>,
+  <span class="cs">'study-plan'</span>: <span class="cs">'Create detailed day-by-day study plan. Day N: Goal, subtopics, activities, self-check...'</span>,
+}</pre></div>
+      <p class="line-explain">Each key maps a task name to a system prompt string. The <strong>doubt prompt</strong> is special — it explicitly tells Gemini to answer ONLY from the numbered passages we provide (the retrieved RAG chunks) and to cite which passage it used. This is what grounds answers in the actual PDF content.</p>
+      <p class="line-explain">The <strong>study-plan prompt</strong> is what makes the Study Planner "agentic" — it asks Gemini to plan across multiple days with progression, which is fundamentally different from answering a single question.</p>
+
+      <div class="code"><pre><span class="ck">const</span> model = genAI.<span class="cf">getGenerativeModel</span>({ model: <span class="cs">'gemini-1.5-flash'</span> })
+<span class="ck">const</span> prompt = <span class="cs">`${systemPrompt}\n\nContent:\n${contentText}${userMessage ? \`\n\nStudent question: ${userMessage}\` : ''}`</span>
+<span class="ck">const</span> result = <span class="ck">await</span> model.<span class="cf">generateContent</span>(prompt)
+<span class="ck">return</span> result.response.<span class="cf">text</span>()</pre></div>
+      <p class="line-explain"><strong>gemini-1.5-flash</strong> is Google's fast, low-cost generative model. "Flash" variants are optimised for speed over capability — suitable for our summarisation, Q&A, and test generation tasks that don't need the most powerful model.</p>
+      <p class="line-explain">The prompt is constructed by concatenating: system instruction + content text + optional student question. The <code>\n\n</code> separators help the model understand which part is which.</p>
+
+      <div class="interview">
+        <div class="interview-title">🎯 Interview Questions — AI/Gemini</div>
+        <div class="qa"><div class="qa-q">Q: How do you make the AI answer from a student's PDF instead of its training data?</div><div class="qa-a">A: Through a technique called RAG — Retrieval-Augmented Generation. We don't send the whole PDF to Gemini (it could be too large). Instead, when a question is asked, we find the most relevant passages from the PDF using vector similarity search (pgvector), then inject those passages into the prompt as numbered items. The system prompt explicitly says "Answer using ONLY these passages and cite which ones you used." Gemini follows the instruction because system prompts constrain its behaviour.</div></div>
+        <div class="qa"><div class="qa-q">Q: What is the difference between the tasks summarize and doubt in your AI system?</div><div class="qa-a">A: For "summarize", we feed the full indexed text of the document (all chunks in order) and ask Gemini to condense it. For "doubt", we first embed the student's specific question, find the 6 most semantically relevant chunks using pgvector's cosine similarity search, then send only those chunks. The doubt task uses RAG retrieval; summarize uses the full text. The doubt system prompt also instructs Gemini to cite which passage it used, producing verifiable answers.</div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- SECTION 7: embeddings.js -->
+<div class="section pb">
+  <div class="sh"><div class="sh-num">07</div><div class="sh-title">server/utils/embeddings.js <span class="sh-sub">— Vector embeddings and text chunking</span></div></div>
+  <div class="file-section">
+    <div class="file-header">📄 server/utils/embeddings.js</div>
+    <div class="file-body">
+      <div class="concept"><div class="concept-title">💡 What is a Vector Embedding?</div><p>An embedding converts text into a list of numbers (a vector) that captures the semantic meaning. "SQL joins combine rows" and "how to merge two database tables" would produce very similar vectors even though they share no words — because they mean the same thing. Gemini's text-embedding-004 produces 768 numbers per text input. These numbers are meaningless individually but their relationships encode meaning. Cosine similarity between two vectors measures how similar their meanings are: 1.0 = identical meaning, 0.0 = unrelated.</p></div>
+
+      <div class="code"><pre><span class="ck">async function</span> <span class="cf">embedText</span>(text) {
+  <span class="ck">const</span> model = genAI.<span class="cf">getGenerativeModel</span>({ model: <span class="cs">'text-embedding-004'</span> })
+  <span class="ck">const</span> result = <span class="ck">await</span> model.<span class="cf">embedContent</span>(text)
+  <span class="ck">return</span> result.embedding.values  <span class="cc">// array of 768 floats</span>
+}</pre></div>
+      <p class="line-explain"><code>text-embedding-004</code> is Gemini's embedding model — separate from the generative model. It takes text and returns an array of 768 floating-point numbers. We use the same model for both indexing (PDF chunks) and querying (student questions) — this is critical. If you used different models, the vector spaces wouldn't be comparable.</p>
+
+      <div class="code"><pre><span class="ck">function</span> <span class="cf">chunkText</span>(text, size = <span class="cn">220</span>, overlap = <span class="cn">40</span>) {
+  <span class="ck">const</span> words = text.<span class="cf">replace</span>(<span class="cn">/\s+/g</span>, <span class="cs">' '</span>).<span class="cf">trim</span>().<span class="cf">split</span>(<span class="cs">' '</span>)
+  <span class="ck">const</span> chunks = []
+  <span class="ck">for</span> (<span class="ck">let</span> i = <span class="cn">0</span>; i &lt; words.length; i += size - overlap) {
+    <span class="ck">const</span> slice = words.<span class="cf">slice</span>(i, i + size).<span class="cf">join</span>(<span class="cs">' '</span>).<span class="cf">trim</span>()
+    <span class="ck">if</span> (slice) chunks.<span class="cf">push</span>(slice)
+    <span class="ck">if</span> (i + size >= words.length) <span class="ck">break</span>
+  }
+  <span class="ck">return</span> chunks
+}</pre></div>
+      <p class="line-explain"><strong>Why chunk?</strong> A 50-page PDF might have 25,000 words. Embedding 25,000 words at once would exceed token limits and lose precision. We split into 220-word pieces.</p>
+      <p class="line-explain"><strong>Why 40-word overlap?</strong> If chunk 1 is words 1-220 and chunk 2 is words 181-400, words 181-220 appear in both. This means a concept that spans the boundary of two chunks is fully captured in at least one chunk. Without overlap, a key sentence split across a boundary would be cut in half in both chunks — potentially making neither retrievable.</p>
+      <p class="line-explain"><strong><code>text.replace(/\s+/g, ' ')</code></strong> — replaces all whitespace sequences (multiple spaces, tabs, newlines) with a single space. Normalises text from PDFs which often have irregular spacing.</p>
+      <p class="line-explain"><strong><code>i += size - overlap</code></strong> — step forward by (220-40=180) words each iteration. So chunk 1 starts at 0, chunk 2 at 180, chunk 3 at 360, etc.</p>
+
+      <div class="interview">
+        <div class="interview-title">🎯 Interview Questions — Embeddings</div>
+        <div class="qa"><div class="qa-q">Q: Explain what vector embeddings are and why you use them.</div><div class="qa-a">A: An embedding converts text into an array of numbers that represents its meaning mathematically. I use Gemini's text-embedding-004 model which produces 768 numbers per input. The key insight is that semantically similar text produces numerically similar vectors. So "normalisation reduces redundancy" and "why is database normalisation important" would produce vectors that are close together in 768-dimensional space, even though they share no words. This lets us find relevant PDF passages for a student's question even when the question uses different words than the document.</div></div>
+        <div class="qa"><div class="qa-q">Q: Why did you use 40-word overlap in your text chunking?</div><div class="qa-a">A: To avoid information loss at chunk boundaries. Imagine a key sentence: "Therefore, the third normal form requires..." — if "Therefore, the third normal form" ends chunk 1 and "requires..." starts chunk 2, both chunks are incomplete and might not be retrieved when someone asks about 3NF. With 40-word overlap, those 40 words appear in both chunk 1 and chunk 2, so the complete sentence exists in at least one chunk. It trades a small amount of storage for significantly better retrieval quality.</div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- SECTION 8: aiController -->
+<div class="section pb">
+  <div class="sh"><div class="sh-num">08</div><div class="sh-title">server/controllers/aiController.js <span class="sh-sub">— The RAG pipeline: ingestion + retrieval</span></div></div>
+  <div class="file-section">
+    <div class="file-header">📄 server/controllers/aiController.js</div>
+    <div class="file-body">
+      <h3>Function 1: ingestContent — Index a PDF for AI</h3>
+      <ul class="plain">
+        <li><strong>Guard:</strong> <code>content.creator_id !== req.user.id</code> — only the creator can trigger indexing of their content. Prevents expensive embedding operations being run on someone else's files.</li>
+        <li><strong>PDF extraction:</strong> Download file from Supabase Storage URL, pass buffer to <code>pdf-parse</code> library which extracts plain text from the PDF binary format.</li>
+        <li><strong>Idempotent:</strong> <code>DELETE content_chunks WHERE content_id = X</code> before inserting. If re-uploaded or re-indexed, old chunks are cleanly replaced. No duplicates.</li>
+        <li><strong>Sequential embedding:</strong> Each chunk is embedded one at a time (not parallel) to respect Gemini's free-tier rate limits.</li>
+      </ul>
+
+      <h3>Function 2: assist — Answer with RAG</h3>
+      <div class="code"><pre><span class="ck">if</span> (contentId &amp;&amp; RETRIEVAL_TASKS.<span class="cf">has</span>(taskType) &amp;&amp; userMessage) {
+  <span class="ck">const</span> queryEmbedding = <span class="ck">await</span> <span class="cf">embedText</span>(userMessage)
+  <span class="ck">const</span> { data: matches } = <span class="ck">await</span> supabase.<span class="cf">rpc</span>(<span class="cs">'match_content_chunks'</span>, {
+    p_content_id: contentId, query_embedding: queryEmbedding, match_count: <span class="cn">6</span>,
+  })
+  contentText = matches.<span class="cf">map</span>((m, i) => <span class="cs">`[${i+1}] ${m.chunk_text}`</span>).<span class="cf">join</span>(<span class="cs">'\n\n'</span>)
+  citations = matches.<span class="cf">map</span>((m, i) => ({ ref: i+<span class="cn">1</span>, snippet: m.chunk_text.<span class="cf">slice</span>(<span class="cn">0</span>,<span class="cn">180</span>) }))
+}</pre></div>
+      <p class="line-explain"><code>RETRIEVAL_TASKS</code> is a Set containing <code>'doubt'</code>. Only doubt questions use semantic retrieval — other tasks (summarise, simplify) use the full indexed text because they need to cover everything, not just the most relevant passages.</p>
+      <p class="line-explain">The chunks are numbered [1], [2], ... so Gemini can reference them inline. The <code>citations</code> array is returned to the frontend to display a "Grounded in this material" section showing which passages the answer came from.</p>
+
+      <div class="interview">
+        <div class="interview-title">🎯 Interview Questions — RAG Pipeline</div>
+        <div class="qa"><div class="qa-q">Q: Walk me through exactly what happens when a student asks a doubt question.</div><div class="qa-a">A: (1) Frontend sends the question text and content ID to POST /api/ai/assist. (2) Server embeds the question using Gemini text-embedding-004 — converts it to 768 numbers. (3) Calls match_content_chunks() PostgreSQL function, which computes cosine similarity between the question vector and every stored chunk vector for that content. Returns top 6 most similar chunks. (4) Those 6 chunks are formatted as numbered passages [1], [2]... and passed to Gemini along with a system prompt saying "answer only from these passages and cite which ones." (5) Gemini returns an answer with inline citations. (6) Server sends back both the answer text and a citations array (ref number + snippet). (7) Frontend displays the answer and shows the citations panel.</div></div>
+        <div class="qa"><div class="qa-q">Q: Why do you delete old chunks before re-ingesting?</div><div class="qa-a">A: Idempotency. If a creator updates their content and triggers re-ingestion, we don't want old and new chunks mixed together. Deleting first and re-inserting makes the operation idempotent — running it multiple times always produces the same clean result: only the current version's chunks exist in the database.</div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- CLIENT SECTIONS -->
+<div class="section pb">
+  <div class="sh"><div class="sh-num">09-11</div><div class="sh-title">CLIENT: supabase.js · authStore · themeStore</div></div>
+
+  <div class="file-section">
+    <div class="file-header">📄 client/src/lib/supabase.js</div>
+    <div class="file-body">
+      <div class="code"><pre><span class="ck">export const</span> supabase = <span class="cf">createClient</span>(import.meta.env.VITE_SUPABASE_URL, import.meta.env.VITE_SUPABASE_ANON_KEY)</pre></div>
+      <p class="line-explain">Creates one shared Supabase client for all frontend code. <strong><code>import.meta.env.VITE_*</code></strong> is how Vite exposes env vars to browser code. Only variables prefixed with <code>VITE_</code> are included in the browser bundle — this prevents accidentally exposing server secrets. The <strong>anon key</strong> is safe here because RLS policies control what it can do.</p>
+    </div>
+  </div>
+
+  <div class="file-section" style="margin-top:14px">
+    <div class="file-header">📄 client/src/store/authStore.js — Zustand global state</div>
+    <div class="file-body">
+      <p class="line-explain"><strong>Problem Zustand solves:</strong> The logged-in user's info (user object, profile with token balance) is needed in 10+ components: Navbar, ContentPage, Wallet, Upload, Dashboard, etc. Without global state, you'd have to pass user as a prop from App → Navbar → every child — called "prop drilling." Zustand creates a store any component can directly subscribe to.</p>
+      <p class="line-explain"><strong><code>create((set) => ({...}))</code></strong> — creates the store. <code>set</code> is the function to update state. <code>setUser: (user) => set({ user })</code> is a function that takes a user object and updates the store. Any component calling <code>useAuthStore()</code> re-renders when the store changes.</p>
+      <p class="line-explain"><strong>Why not Redux?</strong> Redux requires actions, reducers, dispatch, selectors — 50+ lines of boilerplate for the same result. Zustand does it in 10 lines. <strong>Why not React Context?</strong> Context re-renders EVERY consumer when ANY value changes. If token_balance updates, Zustand only re-renders components that specifically subscribed to that field.</p>
+    </div>
+  </div>
+
+  <div class="file-section" style="margin-top:14px">
+    <div class="file-header">📄 client/src/store/themeStore.js — Dark mode with persistence</div>
+    <div class="file-body">
+      <p class="line-explain"><strong><code>persist()</code> middleware</strong> wraps the store and automatically syncs it to <code>localStorage</code> under the key <code>'bb-theme'</code>. On page reload, Zustand reads localStorage and initialises the store with the saved value. Without persist, dark mode would reset to default on every page refresh.</p>
+      <p class="line-explain"><strong><code>document.documentElement.classList.toggle('dark', next)</code></strong> — adds or removes the <code>dark</code> class on the <code>&lt;html&gt;</code> element. Tailwind CSS checks for this class to switch colour schemes — <code>dark:bg-gray-900</code> only applies when the html element has the <code>dark</code> class.</p>
+    </div>
+  </div>
+</div>
+
+<!-- SECTION 12-13: ProtectedRoute + App -->
+<div class="section pb">
+  <div class="sh"><div class="sh-num">12-13</div><div class="sh-title">ProtectedRoute.jsx · App.jsx <span class="sh-sub">— Routing and auth guards</span></div></div>
+
+  <div class="file-section">
+    <div class="file-header">📄 client/src/components/common/ProtectedRoute.jsx</div>
+    <div class="file-body">
+      <div class="code"><pre><span class="ck">if</span> (!user) <span class="ck">return</span> &lt;<span class="cf">Navigate</span> to=<span class="cs">"/login"</span> state={{ from: location }} replace /&gt;
+<span class="ck">if</span> (adminOnly &amp;&amp; profile?.role !== <span class="cs">'admin'</span>) <span class="ck">return</span> &lt;<span class="cf">Navigate</span> to=<span class="cs">"/"</span> replace /&gt;</pre></div>
+      <p class="line-explain"><strong><code>Navigate</code></strong> is React Router's component for programmatic redirects. When rendered, it immediately navigates the user to the specified route. <strong><code>state={{ from: location }}</code></strong> passes the current URL as state — the Login page reads this to redirect back after successful login. <strong><code>replace</code></strong> replaces the history entry instead of adding one, so pressing Back doesn't loop you back to the login page.</p>
+      <p class="line-explain"><strong>The admin guard</strong> checks profile.role. Why check after the user check? Profile is loaded asynchronously after the user session is restored. For a split second, user might exist but profile might still be null. We show a loading spinner instead of redirecting incorrectly.</p>
+    </div>
+  </div>
+
+  <div class="file-section" style="margin-top:14px">
+    <div class="file-header">📄 client/src/App.jsx — Router setup and session restoration</div>
+    <div class="file-body">
+      <p class="line-explain"><strong><code>BrowserRouter</code></strong> uses the HTML5 History API — URLs look like /browse, /wallet instead of /#/browse. <strong><code>Routes</code></strong> is the container; each <strong><code>Route</code></strong> maps a URL pattern to a component. React Router compares the current URL and renders the matching component.</p>
+      <p class="line-explain"><strong>Session restoration in useEffect:</strong> When the page loads, we call <code>supabase.auth.getSession()</code> which checks if there's a stored JWT in localStorage. If yes, the user is still logged in — we fetch their profile and update the Zustand store. This is what keeps users logged in across page refreshes.</p>
+      <p class="line-explain"><strong>The <code>[]</code> dependency array</strong> in useEffect means "run this only once, on mount." Without it, it would run on every render — infinite loop.</p>
+    </div>
+  </div>
+</div>
+
+<!-- SECTION 14: Upload -->
+<div class="section pb">
+  <div class="sh"><div class="sh-num">14</div><div class="sh-title">client/src/pages/Upload.jsx <span class="sh-sub">— Full upload flow with RAG ingest trigger</span></div></div>
+  <div class="file-section">
+    <div class="file-header">📄 client/src/pages/Upload.jsx</div>
+    <div class="file-body">
+      <h3>The 4-step upload sequence</h3>
+      <ul class="plain">
+        <li><strong>Step 1 — Upload file to Supabase Storage:</strong> <code>supabase.storage.from('content').upload(fileName, file)</code> — uploads the actual file bytes to S3-compatible storage. Returns a public URL. The fileName uses <code>user.id/timestamp.ext</code> format to avoid name collisions.</li>
+        <li><strong>Step 2 — Upload thumbnail</strong> (optional, same bucket): Only runs if the user selected a thumbnail image.</li>
+        <li><strong>Step 3 — Insert database row:</strong> <code>supabase.from('content').insert({...})</code> with all metadata. <code>is_published: false</code> means it starts as a draft — creator must explicitly publish from their dashboard.</li>
+        <li><strong>Step 4 — Fire-and-forget AI ingest:</strong> After the DB insert succeeds and we have the content ID, we call <code>/api/ai/ingest</code> WITHOUT await. The page shows success immediately; indexing happens in the background on the server.</li>
+      </ul>
+
+      <div class="concept"><div class="concept-title">💡 Why fire-and-forget for AI ingestion?</div><p>Embedding a 30-page PDF requires downloading it, parsing text, splitting into ~50 chunks, and making 50 API calls to Gemini. This could take 10-20 seconds. If we awaited it, the user would sit on a loading screen for 20 seconds on every upload. Fire-and-forget lets the upload complete instantly; AI features become available after indexing finishes in the background. The .catch(() => {}) ensures any indexing error doesn't bubble up and crash the upload success flow.</p></div>
+
+      <h3>The autocomplete pattern</h3>
+      <p class="line-explain"><code>TOPIC_SUGGESTIONS.filter(t => t.toLowerCase().includes(topicInput.toLowerCase()))</code> — filters the hardcoded list to suggestions containing the user's input. Shows up to 6 results.</p>
+      <p class="line-explain"><strong>The 150ms setTimeout on blur:</strong> <code>onBlur={() => setTimeout(() => setShowSuggestions(false), 150)}</code> — without this delay, clicking a suggestion causes: blur fires → dropdown hides → click registers on nothing. The 150ms delay lets the click on a suggestion register before the dropdown hides.</p>
+
+      <div class="interview">
+        <div class="interview-title">🎯 Interview Questions — Upload</div>
+        <div class="qa"><div class="qa-q">Q: Why do you start AI indexing after upload completes instead of during?</div><div class="qa-a">A: Two reasons: (1) Performance — embedding a PDF requires downloading it, parsing text, and making potentially 50+ sequential API calls to Gemini. This takes 10-30 seconds. If we awaited it, the upload UX would feel broken. (2) Resilience — if indexing fails, the content still exists and is usable. We can retry indexing separately. The upload itself is fast (just a file transfer) and shouldn't be blocked by downstream AI processing.</div></div>
+        <div class="qa"><div class="qa-q">Q: How does the topic autocomplete work?</div><div class="qa-a">A: It's entirely client-side — no API call. We have an array of 22 common topic suggestions. As the user types, we filter this array to only items that include the typed string (case-insensitive). Results are shown in a dropdown. When a suggestion is clicked, we set the input value to that suggestion. The onBlur handler has a 150ms setTimeout before hiding the dropdown — this gives time for a suggestion click to register before the dropdown disappears.</div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- SECTION 15: ContentPage -->
+<div class="section pb">
+  <div class="sh"><div class="sh-num">15</div><div class="sh-title">client/src/pages/ContentPage.jsx <span class="sh-sub">— The most complex page</span></div></div>
+  <div class="file-section">
+    <div class="file-header">📄 client/src/pages/ContentPage.jsx</div>
+    <div class="file-body">
+      <h3>Parallel data fetching in useEffect</h3>
+      <p class="line-explain">Four Supabase queries run simultaneously (not sequentially with await). None of them block each other. React doesn't care which finishes first — each <code>.then()</code> updates its own state independently. This is faster than sequential fetching because the network round-trips overlap.</p>
+
+      <p class="line-explain"><strong><code>.maybeSingle()</code> vs <code>.single()</code></strong> — <code>.single()</code> throws a JavaScript error if zero rows are returned. <code>.maybeSingle()</code> returns <code>null</code> if no row exists. For unlock/bookmark/rating checks, zero rows means "user hasn't done this yet" — that's expected and not an error. Using <code>.single()</code> there would crash the page on every first visit.</p>
+
+      <h3>handleUnlock — atomic token transfer</h3>
+      <div class="code"><pre><span class="ck">await</span> supabase.<span class="cf">rpc</span>(<span class="cs">'unlock_content'</span>, {
+  p_user_id: user.id, p_content_id: content.id,
+  p_cost: content.token_cost, p_creator_id: content.creator.id,
+})</pre></div>
+      <p class="line-explain">This single RPC call does 4 things atomically in the database: (1) verify buyer has enough tokens, (2) deduct tokens from buyer, (3) credit tokens to creator, (4) insert an unlock record. If any step fails, all steps roll back — you can't end up in a state where tokens were deducted but content wasn't unlocked.</p>
+
+      <h3>handleRating — self-rating prevention</h3>
+      <p class="line-explain"><code>rate_content()</code> SECURITY DEFINER function checks <code>rater_id ≠ creator_id</code> at the database level. The frontend also checks to control the UI (showing the "+2 tokens" badge only for non-self ratings), but the database is the authoritative enforcement. A malicious user who bypasses the UI and calls Supabase directly cannot rate their own content.</p>
+
+      <h3>AI Citations display</h3>
+      <p class="line-explain">After <code>runAI()</code> for doubt questions, <code>data.citations</code> contains an array of <code>{ref, snippet, similarity}</code> objects. These are displayed below the AI response as "Grounded in this material" — showing the actual PDF passages the answer was derived from. This makes the AI trustworthy and verifiable — students can see exactly which part of their document was used.</p>
+
+      <div class="interview">
+        <div class="interview-title">🎯 Interview Questions — ContentPage</div>
+        <div class="qa"><div class="qa-q">Q: Why do you use an RPC for unlocking content instead of directly updating the token balance?</div><div class="qa-a">A: Three reasons: (1) Atomicity — the unlock involves multiple operations: deduct from buyer, credit to creator, insert unlock record. A direct multi-query approach could leave the DB in an inconsistent state if the server crashes midway. The RPC wraps everything in one database transaction that either all succeeds or all rolls back. (2) Security — RLS blocks clients from directly updating token_balance. The SECURITY DEFINER function can bypass RLS safely for this specific audited operation. (3) Concurrency — if two requests come simultaneously, the database transaction handles locking, preventing race conditions.</div></div>
+        <div class="qa"><div class="qa-q">Q: How do you prevent someone from rating their own content to earn tokens?</div><div class="qa-a">A: At two levels. The frontend checks content.creator.id === user.id and doesn't show the +2 token badge (and the rate_content function won't award tokens for self-rating). But the critical protection is at the database level — the rate_content() SECURITY DEFINER function has a check: if rater_id = creator_id, it still records the rating but skips the +2 token credit. Someone who bypasses our UI and calls Supabase directly with a crafted request still cannot earn tokens for self-rating.</div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- SECTIONS 16-18 -->
+<div class="section pb">
+  <div class="sh"><div class="sh-num">16-18</div><div class="sh-title">ExamMode · Wallet · FeedbackButton</div></div>
+
+  <div class="file-section">
+    <div class="file-header">📄 client/src/pages/ExamMode.jsx — AI study tools</div>
+    <div class="file-body">
+      <p class="line-explain"><strong>5 tabs:</strong> Expected Questions, Mock Test, Revision Notes, Final Prep, Study Planner. Each maps to a different <code>taskType</code> sent to <code>/api/ai/exam</code>. The server maps these to system prompts in gemini.js.</p>
+      <p class="line-explain"><strong>Study Planner is different:</strong> It additionally sends a <code>days</code> parameter (3/5/7/14/21/30). The server includes "Study duration: N days" in the context, and the special study-plan system prompt tells Gemini to create a day-by-day progressive plan. This is "agentic" — it plans across time rather than answering a single question.</p>
+      <p class="line-explain"><strong>Free-text inputs instead of dropdowns:</strong> Subject and topic are now plain text inputs so any subject works — not just the 4 hardcoded ones from the old version. This makes Exam Mode usable for any student with any curriculum.</p>
+    </div>
+  </div>
+
+  <div class="file-section" style="margin-top:14px">
+    <div class="file-header">📄 client/src/pages/Wallet.jsx — Token purchase and withdrawal</div>
+    <div class="file-body">
+      <p class="line-explain"><strong>Buy tokens flow:</strong> (1) POST /api/payment/create-order with INR amount → get orderId. (2) Open Razorpay checkout with orderId — user pays on Razorpay's interface. (3) On success callback, POST /api/payment/verify with order_id, payment_id, signature. (4) Server verifies HMAC and credits tokens. (5) Update local profile balance.</p>
+      <p class="line-explain"><strong>Withdrawal:</strong> <code>supabase.rpc('request_withdrawal', { p_tokens, p_method, p_upi, p_bank_name, p_account, p_ifsc })</code> — this SECURITY DEFINER function checks balance, deducts tokens, and creates a withdrawal request in one atomic operation. An admin must approve it before money is transferred.</p>
+      <p class="line-explain"><strong>Why use RPC for withdrawal?</strong> Same reason as unlock — atomicity. Checking balance, deducting tokens, and creating the withdrawal record must all happen together. If they were separate queries, a race condition could let two simultaneous withdrawals both pass the balance check before either deducts.</p>
+    </div>
+  </div>
+
+  <div class="file-section" style="margin-top:14px">
+    <div class="file-header">📄 client/src/components/FeedbackButton.jsx</div>
+    <div class="file-body">
+      <p class="line-explain"><strong><code>fixed bottom-6 right-6 z-40</code></strong> (Tailwind) — CSS position:fixed means the button stays in the same viewport position regardless of scrolling. bottom-6 = 24px from bottom, right-6 = 24px from right. z-40 ensures it appears above most page content.</p>
+      <p class="line-explain"><strong>Anonymous feedback:</strong> <code>user_id: user?.id || null</code> — if not logged in, user_id is null. The database accepts null here. RLS allows anyone (including anonymous) to INSERT into the feedback table.</p>
+      <p class="line-explain"><strong>Auto-reset after submit:</strong> <code>setTimeout(() => { setOpen(false); setSubmitted(false); setForm({...}) }, 2000)</code> — shows success state for 2 seconds, then resets everything. Clean UX without requiring the user to manually close the modal.</p>
+    </div>
+  </div>
+</div>
+
+<!-- SECTION 19: Database -->
+<div class="section pb">
+  <div class="sh"><div class="sh-num">19</div><div class="sh-title">Database (COMPLETE_SETUP.sql) <span class="sh-sub">— RLS, SECURITY DEFINER, pgvector</span></div></div>
+  <div class="file-section">
+    <div class="file-header">📄 client/COMPLETE_SETUP.sql — The complete database setup</div>
+    <div class="file-body">
+      <h3>Key Design Decisions</h3>
+
+      <div class="concept"><div class="concept-title">💡 Row-Level Security (RLS)</div><p>Every table has RLS enabled. This means: even if someone gets hold of the anon key and calls Supabase directly (bypassing our Express API), the database itself enforces what they can do. The profiles table policy explicitly EXCLUDES token_balance and role from user updates: <code>WITH CHECK (token_balance = (SELECT token_balance FROM profiles WHERE id = auth.uid()) AND role = (SELECT role FROM profiles WHERE id = auth.uid()))</code> — users can update their name/avatar but the token balance and role must stay the same.</p></div>
+
+      <div class="concept"><div class="concept-title">💡 SECURITY DEFINER Functions</div><p>These are PostgreSQL functions that run with the privileges of the function owner (who has elevated access), not the caller (who has limited access). Our six SECURITY DEFINER functions: credit_purchase(), request_withdrawal(), rate_content(), refund_tokens(), increment_views(), match_content_chunks(). Each is a specific, audited operation that needs to bypass RLS for a good reason — none of them allow arbitrary SQL execution.</p></div>
+
+      <h3>pgvector Setup</h3>
+      <div class="code"><pre><span class="ck">CREATE EXTENSION IF NOT EXISTS</span> vector;
+
+<span class="ck">CREATE TABLE</span> content_chunks (
+  id          uuid <span class="ck">DEFAULT</span> gen_random_uuid() <span class="ck">PRIMARY KEY</span>,
+  content_id  uuid <span class="ck">REFERENCES</span> content(id) <span class="ck">ON DELETE CASCADE</span>,
+  chunk_index integer,
+  chunk_text  text,
+  embedding   vector(<span class="cn">768</span>)   <span class="cc">-- 768 floats from Gemini text-embedding-004</span>
+);
+
+<span class="ck">CREATE INDEX ON</span> content_chunks
+  <span class="ck">USING</span> ivfflat (embedding vector_cosine_ops) <span class="ck">WITH</span> (lists = <span class="cn">100</span>);</pre></div>
+      <p class="line-explain"><strong><code>vector(768)</code></strong> — custom data type from pgvector extension. Stores 768 floating-point numbers per row.</p>
+      <p class="line-explain"><strong>IVFFlat index</strong> — Inverted File Flat index. For similarity search over thousands of vectors, checking every vector (brute force) is slow. IVFFlat groups vectors into 100 clusters. When searching, it only checks the most likely clusters — much faster approximate nearest-neighbour search. <code>vector_cosine_ops</code> tells it to use cosine similarity as the distance metric.</p>
+      <p class="line-explain"><strong><code>ON DELETE CASCADE</code></strong> — if a content row is deleted, all its chunks are automatically deleted too. No orphaned chunks.</p>
+
+      <h3>match_content_chunks() function</h3>
+      <div class="code"><pre><span class="ck">CREATE FUNCTION</span> match_content_chunks(p_content_id uuid, query_embedding vector(<span class="cn">768</span>), match_count int)
+<span class="ck">RETURNS TABLE</span>(chunk_text text, similarity float)
+<span class="ck">LANGUAGE</span> sql <span class="ck">SECURITY DEFINER AS</span> $$
+  <span class="ck">SELECT</span> chunk_text, <span class="cn">1</span> - (embedding &lt;=&gt; query_embedding) <span class="ck">AS</span> similarity
+  <span class="ck">FROM</span> content_chunks
+  <span class="ck">WHERE</span> content_id = p_content_id
+  <span class="ck">ORDER BY</span> embedding &lt;=&gt; query_embedding
+  <span class="ck">LIMIT</span> match_count;
+$$;</pre></div>
+      <p class="line-explain"><strong><code>&lt;=&gt;</code></strong> is the pgvector cosine distance operator. Lower distance = more similar. <code>1 - distance = similarity</code>. So we order by distance (ascending = most similar first) and return <code>1 - distance</code> as the similarity score.</p>
+
+      <div class="interview">
+        <div class="interview-title">🎯 Interview Questions — Database</div>
+        <div class="qa"><div class="qa-q">Q: How does your database prevent users from directly manipulating their token balance?</div><div class="qa-a">A: Row-Level Security. The profiles table has an UPDATE policy that allows users to update their own row BUT requires that token_balance and role remain unchanged. The policy uses a WITH CHECK clause that compares the proposed values against the current values — if they differ, the update is rejected by the database engine itself, regardless of how the request was made. Even a developer with the anon key calling Supabase directly cannot bypass this.</div></div>
+        <div class="qa"><div class="qa-q">Q: What is pgvector and why did you use it instead of a dedicated vector database?</div><div class="qa-a">A: pgvector is a PostgreSQL extension that adds a vector data type and similarity search capabilities including IVFFlat indexing for approximate nearest-neighbour search. I already use Supabase (PostgreSQL) for all my data — adding pgvector keeps everything in one database. Dedicated vector databases like Pinecone or Weaviate would require a separate service, separate credentials, separate billing, and data synchronisation between systems. For the scale of this project, pgvector in PostgreSQL is more than sufficient and dramatically simpler to operate.</div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- SECTION 20: INTERVIEW Q&A -->
+<div class="section pb">
+  <div class="sh"><div class="sh-num">20</div><div class="sh-title">40 Interview Questions &amp; Answers <span class="sh-sub">— Complete preparation</span></div></div>
+
+  <div class="interview">
+    <div class="interview-title">Architecture &amp; Design</div>
+    <div class="qa"><div class="qa-q">1. Why did you split the app into a separate React frontend and Express backend instead of using Next.js?</div><div class="qa-a">A: Several reasons. First, our backend does heavy work — PDF parsing, calling Gemini 50 times per ingestion, HMAC verification — that benefits from a persistent Node.js process on Render rather than serverless functions. Second, separating frontend and backend means they can scale independently. Third, having a standalone API means it can serve mobile apps or other clients in the future. Next.js was designed for SSR-first apps; ours is a SPA with a complex backend.</div></div>
+    <div class="qa"><div class="qa-q">2. Why Supabase instead of Firebase?</div><div class="qa-a">A: Firebase uses a NoSQL document store — no SQL queries, no JOINs, no pgvector extension. Our app needs: (1) Complex relational queries — content joined with creators, unlocks, ratings. (2) pgvector for semantic search. (3) Row-Level Security for fine-grained access control. Firebase can't do any of these. Supabase gives us PostgreSQL with all its power plus Auth and Storage in one platform.</div></div>
+    <div class="qa"><div class="qa-q">3. How does the token economy work at a technical level?</div><div class="qa-a">A: All token movements are handled by SECURITY DEFINER PostgreSQL functions: credit_purchase() for buying, unlock_content() for spending, rate_content() for earning +2, request_withdrawal() for cashing out, refund_tokens() for admin rejections. None of these can be called directly by clients with an anon key — they go through our Express API (which verifies the JWT first) or are triggered by server-side logic. The profiles table RLS prevents any direct manipulation of token_balance.</div></div>
+    <div class="qa"><div class="qa-q">4. How does your app handle concurrent requests — e.g. two users unlocking the same content at the same time?</div><div class="qa-a">A: The unlock_content() database function handles this. PostgreSQL transactions with appropriate isolation levels ensure that two concurrent unlock operations for the same user are serialised at the database level. The function checks balance and deducts atomically — a SELECT FOR UPDATE lock prevents another transaction from reading and modifying the same balance row simultaneously.</div></div>
+    <div class="qa"><div class="qa-q">5. What would you change if this needed to scale to 100,000 users?</div><div class="qa-a">A: (1) The embedding ingestion is currently sequential — I'd add a message queue (Redis + Bull) to process uploads in parallel workers. (2) The IVFFlat index with 100 lists would need more lists as the vector table grows. (3) CDN for video delivery instead of direct Supabase Storage URLs. (4) Caching frequent queries (leaderboard, popular content) with Redis. (5) Horizontal scaling of the Express API behind a load balancer.</div></div>
+  </div>
+
+  <div class="interview" style="margin-top:14px">
+    <div class="interview-title">Security</div>
+    <div class="qa"><div class="qa-q">6. How does HMAC payment verification work and why can't it be faked?</div><div class="qa-a">A: HMAC uses a secret key to produce a message authentication code. Our server and Razorpay both know the same secret (RAZORPAY_KEY_SECRET). When a payment completes, Razorpay computes HMAC-SHA256(order_id + "|" + payment_id, secret) and sends it as razorpay_signature. Our server does the same computation. If they match, we know the message hasn't been tampered with AND it came from Razorpay. An attacker cannot forge a valid signature without knowing the secret key — SHA256 is a one-way function, you can't reverse it to find the key.</div></div>
+    <div class="qa"><div class="qa-q">7. What is the difference between authentication and authorisation in your app?</div><div class="qa-a">A: Authentication = "who are you?" — handled by Supabase Auth + JWT. The verifyToken middleware authenticates every request. Authorisation = "what are you allowed to do?" — handled by RLS policies and explicit checks. For example, ingestContent authorises by checking creator_id === req.user.id. The admin panel authorises by checking profile.role === 'admin'. Authentication happens at the middleware layer; authorisation happens in each specific handler or RLS policy.</div></div>
+    <div class="qa"><div class="qa-q">8. Can a user with the anon key directly query Supabase and steal all content?</div><div class="qa-a">A: No. RLS policies on the content table only allow reading content that is published (is_published = true). Unpublished drafts are invisible. The content_chunks table has RLS policies that prevent reading chunks directly — only the match_content_chunks() SECURITY DEFINER function can query them, and it's called by our Express API (not exposed directly). Actual file URLs from Supabase Storage use signed or public URLs configured to be accessible only for content the user has unlocked.</div></div>
+    <div class="qa"><div class="qa-q">9. How are admin permissions enforced?</div><div class="qa-a">A: At two levels. Frontend: ProtectedRoute with adminOnly prop checks profile.role — non-admins see a redirect to /. Backend: admin-only operations go through our Express API which could add role checks (or they rely on RLS). The role is stored in the profiles table with an RLS policy preventing users from changing their own role — only a service-role client (our server) can change roles.</div></div>
+    <div class="qa"><div class="qa-q">10. What prevents someone from sending fake feedback or reports spam?</div><div class="qa-a">A: The feedback and reports tables require INSERT — anyone can submit. Rate limiting would be the proper solution (not yet implemented). However, the admin panel gives moderators full control to review and dismiss reports. The user_id (or null for anonymous) is recorded, so patterns can be identified. For production at scale, I'd add rate limiting middleware (express-rate-limit) and CAPTCHA for anonymous submissions.</div></div>
+  </div>
+
+  <div class="interview" style="margin-top:14px">
+    <div class="interview-title">AI &amp; RAG</div>
+    <div class="qa"><div class="qa-q">11. How is your RAG implementation different from just passing the whole PDF to Gemini?</div><div class="qa-a">A: Three important differences. (1) Scale — a 50-page PDF might have 25,000 words, exceeding Gemini's context window. RAG lets us handle documents of any size. (2) Cost — Gemini charges per token. Sending 25,000 words every time someone asks a question is expensive. RAG sends only the 6 most relevant passages (~1,320 words). (3) Precision — flooding the context with irrelevant text actually degrades answer quality. Retrieval selects only relevant passages, grounding the answer more precisely.</div></div>
+    <div class="qa"><div class="qa-q">12. What model do you use for embeddings vs generation and why are they different?</div><div class="qa-a">A: text-embedding-004 for embeddings — this model is specialised for converting text to vectors that capture semantic meaning. It doesn't generate text; it just maps text to a 768-dimensional space. gemini-1.5-flash for generation — this is the conversational/generative model that produces human-readable answers, summaries, study plans, etc. They're separate models because they do fundamentally different things. Both use the same Gemini API key — no extra cost for embeddings on the free tier.</div></div>
+    <div class="qa"><div class="qa-q">13. What happens if a student asks a question the PDF doesn't cover?</div><div class="qa-a">A: The system prompt for doubts explicitly says "If the passages do not contain the answer, say so honestly." So Gemini will retrieve the closest available chunks (which might be tangentially related) and if they don't contain the answer, it will say something like "The provided material doesn't cover this specific question." It won't hallucinate an answer from general training data. This honesty is a feature — students know to look elsewhere when the document doesn't cover something.</div></div>
+    <div class="qa"><div class="qa-q">14. How does the Study Planner differ from a regular AI chat?</div><div class="qa-a">A: A regular chat answers a single question in isolation. The Study Planner is "agentic" because it plans across time — given a subject and N days, Gemini produces a structured sequence of daily goals, each building on the previous. The system prompt instructs it to be progressive (foundations first, then advanced concepts, then revision). The user gets a cohesive multi-day plan rather than a single answer. This is a different kind of AI usage — planning rather than answering.</div></div>
+  </div>
+
+  <div class="interview" style="margin-top:14px">
+    <div class="interview-title">Frontend &amp; React</div>
+    <div class="qa"><div class="qa-q">15. Why did you choose Zustand over Redux or Context API?</div><div class="qa-a">A: Redux requires actions, action creators, reducers, and dispatch — 50+ lines of boilerplate to store whether a user is logged in. Zustand achieves the same in 10 lines. React Context re-renders every component that consumes it whenever any value in the context changes — if profile.token_balance updates, every component using the auth context would re-render, even if they don't care about the balance. Zustand uses subscriptions — components only re-render when the specific slice of state they use changes. For a project of this size, Zustand was the perfect balance of simplicity and performance.</div></div>
+    <div class="qa"><div class="qa-q">16. How does dark mode persist across page refreshes?</div><div class="qa-a">A: The themeStore uses Zustand's persist middleware, which serialises the store to localStorage under a key ('bb-theme'). On page load, the middleware reads localStorage and initialises the store with the saved value. The init() function then applies the class to the HTML element: document.documentElement.classList.toggle('dark', savedDarkValue). Tailwind CSS reads this class to switch between light and dark colour schemes. The whole thing is transparent — the user just sees their preference remembered.</div></div>
+    <div class="qa"><div class="qa-q">17. What is the difference between useEffect with [] and without dependencies?</div><div class="qa-a">A: useEffect without a dependency array runs after EVERY render — every state change, every prop change. useEffect with an empty array [] runs ONLY once, after the initial render (like componentDidMount). useEffect with [id, user] runs after the initial render AND whenever id or user changes. In ContentPage, we use [id, user] because when the URL changes to a different content page, we need to re-fetch data for the new content ID.</div></div>
+    <div class="qa"><div class="qa-q">18. How does ProtectedRoute redirect back to the original page after login?</div><div class="qa-a">A: When ProtectedRoute redirects to /login, it passes the current location as state: &lt;Navigate to="/login" state={{ from: location }} replace /&gt;. The Login page reads this: const { state } = useLocation(); and after successful login, navigates to state?.from?.pathname || '/' — the original URL the user was trying to access. The replace prop prevents the /login entry from appearing in the browser history, so pressing Back after login goes to the page before the protected route.</div></div>
+  </div>
+
+  <div class="interview" style="margin-top:14px">
+    <div class="interview-title">General / Quick Fire</div>
+    <div class="qa"><div class="qa-q">19. What is the difference between .env variables prefixed with VITE_ and those without?</div><div class="qa-a">A: Vite (our frontend build tool) only includes env variables prefixed with VITE_ in the browser bundle. Variables without this prefix are never sent to the browser. This prevents accidentally exposing server secrets like RAZORPAY_KEY_SECRET or SUPABASE_SERVICE_KEY in the frontend JavaScript that anyone can read in browser DevTools.</div></div>
+    <div class="qa"><div class="qa-q">20. What does async/await do and why do we use it?</div><div class="qa-a">A: async/await is syntactic sugar for Promises — JavaScript's way of handling asynchronous operations (network requests, file reads, database queries) without blocking. Without it, you'd write .then().then().catch() chains that are hard to read. With async/await, the code reads linearly like synchronous code. await pauses the function until the Promise resolves. The async keyword marks a function as containing await and automatically returns a Promise.</div></div>
+    <div class="qa"><div class="qa-q">21. What is the purpose of the receipt field in the Razorpay order?</div><div class="qa-a">A: It's a unique identifier we generate for our own records — `bb_${Date.now()}` produces something like "bb_1703123456789". It doesn't affect payment processing but helps us identify orders in the Razorpay dashboard and in our logs. Using Date.now() (current timestamp in ms) ensures uniqueness for all practical purposes.</div></div>
+    <div class="qa"><div class="qa-q">22. What is the purpose of the health check endpoint?</div><div class="qa-a">A: Render (our hosting platform) periodically pings /health to confirm the server is running. If the endpoint stops responding, Render restarts the server. External monitoring services (UptimeRobot, etc.) also use health checks. It's a one-liner that returns 200 OK — minimal overhead but critical for uptime monitoring and automated recovery.</div></div>
+    <div class="qa"><div class="qa-q">23. Why is is_published set to false on upload?</div><div class="qa-a">A: Safety. A creator might upload content that needs editing before it's public. By defaulting to draft (is_published: false), they can review it in their dashboard, make changes, and only publish when ready. This prevents accidentally publishing incomplete or incorrect content the moment it's uploaded.</div></div>
+    <div class="qa"><div class="qa-q">24. What is the purpose of the onConflict: 'email' in the upsert call?</div><div class="qa-a">A: upsert means "insert if not exists, update if exists." The onConflict tells Supabase which column to check for conflicts. If a row with the same email already exists (user is re-requesting a verification code), it updates that row with the new code and expiry instead of trying to insert a duplicate and getting a unique constraint error. This handles the "resend code" flow gracefully.</div></div>
+    <div class="qa"><div class="qa-q">25. How does the progress bar on the Upload page work?</div><div class="qa-a">A: It's a manually controlled state value — not actually measuring real upload progress from the network. We use setProgress(30) before the file upload, setProgress(60) after file upload completes, setProgress(80) after thumbnail upload, setProgress(100) after DB insert. The bar visually fills in stages corresponding to these steps. True byte-level progress would require monitoring the upload XHR, which is more complex and wasn't necessary here.</div></div>
+  </div>
+</div>
+
+<!-- SECTION 21: 2-MINUTE SCRIPT -->
+<div class="section pb">
+  <div class="sh"><div class="sh-num">21</div><div class="sh-title">How to explain BrainBarter in 2 minutes <span class="sh-sub">— Memorise this</span></div></div>
+  <div class="two-min">
+    <p>"<strong>BrainBarter is a peer-to-peer learning marketplace</strong> I built where students earn tokens by uploading study material and spend those tokens to unlock content from peers. Creators can withdraw their earnings as real money to UPI or a bank account.</p>
+    <br/>
+    <p>The interesting technical part is the <strong>AI tutor</strong>. Instead of just using ChatGPT-style general knowledge, I built a RAG pipeline — Retrieval-Augmented Generation. When a student uploads a PDF, my server extracts the text, splits it into 220-word overlapping chunks, converts each chunk to a 768-dimensional vector using Google Gemini's embedding model, and stores those vectors in PostgreSQL using the pgvector extension. When a student asks a question, we embed the question the same way, run a cosine similarity search to find the most relevant passages, and send only those passages to Gemini to answer from — with citations to the exact passages used.</p>
+    <br/>
+    <p>For <strong>security</strong>, I was careful about three things: payment integrity — Razorpay payments are verified server-side using HMAC-SHA256 so no one can fake a payment. Token safety — all token movements go through PostgreSQL SECURITY DEFINER functions, and Row-Level Security on the profiles table prevents any direct manipulation of balances. Authentication — email OTPs use Node's crypto.randomInt instead of Math.random, stored in Supabase so they survive server restarts.</p>
+    <br/>
+    <p>The stack is <strong>React with Zustand</strong> for global state on the frontend, <strong>Node.js with Express</strong> as the API, <strong>Supabase</strong> for PostgreSQL with Auth and Storage, and deployed on <strong>Vercel and Render</strong>."</p>
+  </div>
+
+  <div class="why" style="margin-top:16px">
+    <div class="why-title">💙 Tips for the interview</div>
+    <ul class="plain">
+      <li>When asked about <strong>any security decision</strong>, always mention the layer — client-side check (UX), server-side check (API), and database-level enforcement (RLS/SECURITY DEFINER). Show you think in defence-in-depth.</li>
+      <li>When asked <strong>"why X over Y?"</strong> — always give a concrete reason tied to your project's needs, not just "X is better."</li>
+      <li>When asked about <strong>RAG</strong> — draw the two-phase diagram: ingestion (upload → chunk → embed → store) and retrieval (question → embed → similarity search → feed to AI).</li>
+      <li>When asked about <strong>HMAC</strong> — say "both sides have the same secret, both compute the same hash, if they match the message is authentic and unmodified."</li>
+      <li>When asked about <strong>what you'd improve</strong> — mention: rate limiting, proper signed URLs for content access, Redis caching for the leaderboard, job queue for bulk embedding.</li>
+    </ul>
+  </div>
+</div>
+
+</body>
+</html>
