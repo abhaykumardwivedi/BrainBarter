@@ -2,13 +2,18 @@ const { GoogleGenerativeAI } = require('@google/generative-ai')
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY)
 
-// Gemini's embedding model — 768 dimensions, free with the same API key.
-const EMBED_MODEL = 'text-embedding-005'
-const EMBED_DIM = 768
+// apiVersion MUST go in the 2nd arg of getGenerativeModel() — the constructor ignores it.
+// text-embedding-004 is confirmed stable on the free tier (768 dimensions).
+const EMBED_MODEL  = process.env.GEMINI_EMBED_MODEL || 'text-embedding-004'
+const API_VERSION  = process.env.GEMINI_API_VERSION || 'v1beta'
+const EMBED_DIM    = 768
 
 // Embed a single string → number[768]
 async function embedText(text) {
-  const model = genAI.getGenerativeModel({ model: EMBED_MODEL })
+  const model = genAI.getGenerativeModel(
+    { model: EMBED_MODEL },
+    { apiVersion: API_VERSION }
+  )
   const result = await model.embedContent(text)
   return result.embedding.values
 }
