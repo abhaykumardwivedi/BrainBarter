@@ -1,0 +1,1229 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>BrainBarter — Code Explained Part 2</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: 'Segoe UI', Arial, sans-serif; font-size: 13px; color: #1a1a2e; background: #f8f9fc; line-height: 1.7; }
+  .cover { background: linear-gradient(135deg, #7b2cbf 0%, #c77dff 100%); color: white; padding: 60px 50px; page-break-after: always; }
+  .cover h1 { font-size: 36px; font-weight: 800; margin-bottom: 8px; }
+  .cover h2 { font-size: 22px; font-weight: 400; opacity: 0.85; margin-bottom: 30px; }
+  .cover .badge { display: inline-block; background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.4); border-radius: 20px; padding: 6px 16px; font-size: 12px; margin: 4px; }
+  .cover .meta { margin-top: 40px; opacity: 0.75; font-size: 12px; }
+  .toc { background: white; padding: 40px 50px; page-break-after: always; }
+  .toc h2 { font-size: 20px; color: #7b2cbf; margin-bottom: 20px; border-bottom: 2px solid #e9d5ff; padding-bottom: 10px; }
+  .toc a { display: block; color: #4b0082; text-decoration: none; padding: 4px 0; font-size: 13px; }
+  .toc a:hover { color: #9d4edd; }
+  .toc .toc-section { font-weight: 700; color: #1a1a2e; margin-top: 12px; font-size: 14px; }
+  .section { background: white; margin: 0; padding: 40px 50px; page-break-inside: avoid; }
+  .section + .section { border-top: 6px solid #f8f9fc; }
+  .section-header { display: flex; align-items: center; gap: 12px; margin-bottom: 24px; padding-bottom: 12px; border-bottom: 2px solid #e9d5ff; }
+  .section-header .file-tag { background: #7b2cbf; color: white; font-size: 11px; font-weight: 700; padding: 4px 12px; border-radius: 20px; font-family: monospace; white-space: nowrap; }
+  .section-header h2 { font-size: 20px; color: #1a1a2e; }
+  .section-header .type-badge { background: #f3e8ff; color: #7b2cbf; font-size: 10px; padding: 3px 10px; border-radius: 12px; font-weight: 600; }
+  pre { background: #0f0f1e; color: #e2e8f0; padding: 18px 20px; border-radius: 8px; font-size: 11.5px; font-family: 'Consolas', 'Courier New', monospace; overflow-x: auto; line-height: 1.6; margin: 14px 0; border-left: 3px solid #9d4edd; }
+  .explain { background: #faf5ff; border-left: 4px solid #c77dff; padding: 14px 18px; border-radius: 0 8px 8px 0; margin: 10px 0; }
+  .explain p { color: #3b0764; margin-bottom: 6px; }
+  .explain p:last-child { margin-bottom: 0; }
+  .explain strong { color: #6b21a8; }
+  .line-explain { display: grid; grid-template-columns: 1fr 1.5fr; gap: 16px; margin: 14px 0; }
+  .line-explain .code-col pre { margin: 0; }
+  .line-explain .desc-col { background: #f3e8ff; padding: 14px; border-radius: 8px; font-size: 12px; color: #3b0764; }
+  .highlight { background: #fffbeb; border: 1px solid #fde68a; padding: 12px 16px; border-radius: 8px; margin: 12px 0; font-size: 12px; color: #92400e; }
+  .qa-card { background: white; border: 1px solid #e9d5ff; border-radius: 10px; padding: 18px 20px; margin: 14px 0; box-shadow: 0 2px 8px rgba(123,44,191,0.06); }
+  .qa-card .q { font-weight: 700; color: #6b21a8; font-size: 13px; margin-bottom: 8px; }
+  .qa-card .q::before { content: "Q: "; }
+  .qa-card .a { color: #1a1a2e; font-size: 12.5px; line-height: 1.7; }
+  .qa-card .a code { background: #f3e8ff; color: #6b21a8; padding: 1px 5px; border-radius: 3px; font-family: monospace; font-size: 11px; }
+  .sub-head { font-size: 16px; color: #6b21a8; font-weight: 700; margin: 24px 0 12px; padding-bottom: 6px; border-bottom: 1px solid #e9d5ff; }
+  table { width: 100%; border-collapse: collapse; margin: 14px 0; font-size: 12px; }
+  th { background: #6b21a8; color: white; padding: 10px 14px; text-align: left; }
+  td { padding: 8px 14px; border-bottom: 1px solid #f3e8ff; }
+  tr:nth-child(even) td { background: #faf5ff; }
+  .chip { display: inline-block; background: #e9d5ff; color: #6b21a8; padding: 2px 8px; border-radius: 10px; font-size: 11px; font-weight: 600; margin: 2px; }
+  .note { background: #fef9c3; border: 1px solid #fde68a; padding: 10px 14px; border-radius: 6px; font-size: 12px; color: #713f12; margin: 10px 0; }
+  .warn { background: #fef2f2; border: 1px solid #fca5a5; padding: 10px 14px; border-radius: 6px; font-size: 12px; color: #7f1d1d; margin: 10px 0; }
+  p { margin-bottom: 10px; }
+  @media print { .section { page-break-inside: auto; } }
+</style>
+</head>
+<body>
+
+<!-- Cover -->
+<div class="cover">
+  <div style="font-size:12px; opacity:0.7; margin-bottom:16px;">PART 2 OF 2</div>
+  <h1>BrainBarter</h1>
+  <h2>Complete Code Explained — Part 2</h2>
+  <p style="opacity:0.8; max-width:520px; margin-bottom:24px;">Every file, every function, every line — explained so clearly you can answer any question an interviewer throws at you.</p>
+  <div>
+    <span class="badge">Frontend Pages</span>
+    <span class="badge">Layout Components</span>
+    <span class="badge">Common Components</span>
+    <span class="badge">Server Routes</span>
+    <span class="badge">Database SQL</span>
+    <span class="badge">30 Interview Q&amp;As</span>
+  </div>
+  <div class="meta">
+    <p>Author: Abhay Kumar Dwivedi &nbsp;|&nbsp; Stack: React + Vite + Node.js + Supabase + pgvector + Gemini AI</p>
+    <p>This document is Part 2. Read Part 1 (brainbarter_explained.pdf) first for server controllers, utils, stores, and App-level files.</p>
+  </div>
+</div>
+
+<!-- TOC -->
+<div class="toc">
+  <h2>Table of Contents</h2>
+  <div class="toc-section">Entry Point</div>
+  <a href="#main">main.jsx — React 18 app bootstrap</a>
+  <div class="toc-section">Server Routes</div>
+  <a href="#routes-auth">server/routes/auth.js</a>
+  <a href="#routes-ai">server/routes/ai.js</a>
+  <a href="#routes-payment">server/routes/payment.js</a>
+  <div class="toc-section">Layout Components</div>
+  <a href="#navbar">Navbar.jsx — sticky nav, user menu, mobile menu, dark mode</a>
+  <a href="#footer">Footer.jsx</a>
+  <div class="toc-section">Common UI Components</div>
+  <a href="#button">Button.jsx</a>
+  <a href="#input">Input.jsx</a>
+  <a href="#avatar">Avatar.jsx</a>
+  <a href="#badge">Badge.jsx</a>
+  <a href="#tokenchip">TokenChip.jsx</a>
+  <a href="#modal">Modal.jsx</a>
+  <a href="#skeleton">Skeleton.jsx &amp; CardSkeleton</a>
+  <a href="#loader">Loader.jsx &amp; PageLoader</a>
+  <a href="#emptystate">EmptyState.jsx</a>
+  <a href="#index-js">components/common/index.js — barrel exports</a>
+  <div class="toc-section">Pages</div>
+  <a href="#home">Home.jsx — landing page</a>
+  <a href="#login">Login.jsx — sign-in + password reset</a>
+  <a href="#register">Register.jsx — 2-step OTP registration</a>
+  <a href="#browse">Browse.jsx — content discovery</a>
+  <a href="#profile">Profile.jsx — user profile, bookmarks, progress</a>
+  <a href="#dashboard">CreatorDashboard.jsx</a>
+  <a href="#admin">AdminPanel.jsx — withdrawals, feedback, reports, moderation</a>
+  <a href="#leaderboard">Leaderboard.jsx</a>
+  <div class="toc-section">Database</div>
+  <a href="#sql">COMPLETE_SETUP.sql — full schema, RLS, RPCs</a>
+  <div class="toc-section">Interview Prep</div>
+  <a href="#qa">30 Interview Questions &amp; Answers</a>
+</div>
+
+<!-- main.jsx -->
+<div class="section" id="main">
+  <div class="section-header">
+    <div class="file-tag">client/src/main.jsx</div>
+    <h2>App Entry Point</h2>
+    <div class="type-badge">React 18</div>
+  </div>
+  <pre>import { StrictMode } from 'react'
+import { createRoot } from 'react-dom/client'
+import './index.css'
+import App from './App.jsx'
+
+createRoot(document.getElementById('root')).render(
+  &lt;StrictMode&gt;
+    &lt;App /&gt;
+  &lt;/StrictMode&gt;,
+)</pre>
+  <div class="explain">
+    <p><strong>createRoot:</strong> React 18's new root API. Instead of the old <code>ReactDOM.render()</code>, we use <code>createRoot(domNode).render(jsx)</code>. This enables concurrent features like Suspense, transitions, and automatic batching of state updates.</p>
+    <p><strong>document.getElementById('root'):</strong> Grabs the <code>&lt;div id="root"&gt;</code> from <code>index.html</code>. React mounts the entire app inside that div — everything you see on screen is React-rendered inside it.</p>
+    <p><strong>StrictMode:</strong> A development-only wrapper. It deliberately renders every component TWICE to expose side-effects in <code>useEffect</code>, and warns about deprecated APIs. It has ZERO effect in production — no double renders in prod. This is why you might see console logs appearing twice during development.</p>
+    <p><strong>index.css:</strong> Imported here so it applies globally. It contains Tailwind's base/components/utilities layers and custom CSS classes like <code>.card</code>, <code>.btn-primary</code>, <code>.skeleton</code>, etc.</p>
+  </div>
+</div>
+
+<!-- Routes -->
+<div class="section" id="routes-auth">
+  <div class="section-header">
+    <div class="file-tag">server/routes/auth.js</div>
+    <h2>Auth Routes</h2>
+    <div class="type-badge">Express Router</div>
+  </div>
+  <pre>const express = require('express')
+const { sendVerificationCode, verifyCode } = require('../controllers/authController')
+const router = express.Router()
+
+router.post('/send-verification', sendVerificationCode)
+router.post('/verify-code', verifyCode)
+
+module.exports = router</pre>
+  <div class="explain">
+    <p><strong>express.Router():</strong> Creates a mini-app that handles its own routes. This router is mounted in <code>server/index.js</code> at <code>app.use('/api/auth', authRoutes)</code>, so the full URL becomes <code>/api/auth/send-verification</code>.</p>
+    <p><strong>No verifyToken middleware here</strong> — and that's intentional! During registration/login, the user doesn't have a JWT yet. These endpoints are public. Once the user registers and logs in, they get a Supabase JWT, which ALL other routes require.</p>
+    <p><strong>Controller pattern:</strong> The router file is thin — it only defines which function handles which HTTP method + path. All the logic lives in the controller.</p>
+  </div>
+</div>
+
+<div class="section" id="routes-ai">
+  <div class="section-header">
+    <div class="file-tag">server/routes/ai.js</div>
+    <h2>AI Routes</h2>
+    <div class="type-badge">Express Router</div>
+  </div>
+  <pre>const express = require('express')
+const router  = express.Router()
+const { verifyToken }    = require('../middleware/verifyToken')
+const { assist, examMode, ingestContent } = require('../controllers/aiController')
+
+router.post('/assist',    verifyToken, assist)
+router.post('/exam',      verifyToken, examMode)
+router.post('/ingest',    verifyToken, ingestContent)
+
+module.exports = router</pre>
+  <div class="explain">
+    <p><strong>verifyToken as middleware:</strong> Notice how <code>verifyToken</code> appears BETWEEN the route path and the handler function: <code>router.post('/assist', verifyToken, assist)</code>. Express calls middleware functions left to right. So: request arrives → verifyToken runs → if valid, calls <code>next()</code> → assist runs. If invalid JWT, verifyToken sends 401 and assist never runs.</p>
+    <p><strong>/assist:</strong> Used by ContentPage.jsx for AI features on specific content (summarize, doubt, generate notes).</p>
+    <p><strong>/exam:</strong> Used by ExamMode.jsx for subject-level AI (expected questions, mock test, study plan).</p>
+    <p><strong>/ingest:</strong> Called fire-and-forget after upload. Extracts PDF text, chunks it, embeds with Gemini, stores vectors in Supabase. Enables RAG for the AI assistant.</p>
+  </div>
+</div>
+
+<div class="section" id="routes-payment">
+  <div class="section-header">
+    <div class="file-tag">server/routes/payment.js</div>
+    <h2>Payment Routes</h2>
+    <div class="type-badge">Express Router</div>
+  </div>
+  <pre>const express = require('express')
+const router  = express.Router()
+const { verifyToken } = require('../middleware/verifyToken')
+const { createOrder, verifyPayment } = require('../controllers/paymentController')
+
+router.post('/create-order', verifyToken, createOrder)
+router.post('/verify',       verifyToken, verifyPayment)
+
+module.exports = router</pre>
+  <div class="explain">
+    <p><strong>Both endpoints are protected</strong> — you must be logged in to buy tokens. This prevents anonymous payment orders and ensures we know which user's balance to credit.</p>
+    <p><strong>Two-step payment flow:</strong> <code>/create-order</code> talks to Razorpay API to create an order (returns an order_id). Wallet.jsx opens the Razorpay checkout UI with that order_id. After payment, Razorpay calls our <code>/verify</code> endpoint with the payment signature. We verify it server-side to prevent fake payments.</p>
+    <p><strong>Why two endpoints?</strong> Security. Token amounts are locked server-side when the order is created — the client can't tamper with the amount. The signature verification prevents replaying old payments or crafting fake ones.</p>
+  </div>
+</div>
+
+<!-- Navbar -->
+<div class="section" id="navbar">
+  <div class="section-header">
+    <div class="file-tag">client/src/components/layout/Navbar.jsx</div>
+    <h2>Navbar</h2>
+    <div class="type-badge">Layout Component</div>
+  </div>
+  <pre>const navLinks = [
+  { to: '/',            label: 'Home',      icon: RiHome4Line },
+  { to: '/browse',      label: 'Browse',    icon: RiCompassLine },
+  { to: '/exam-mode',   label: 'Exam Mode', icon: RiFlashlightLine },
+  { to: '/leaderboard', label: 'Leaders',   icon: RiTrophyLine },
+]</pre>
+  <div class="explain">
+    <p><strong>Data-driven nav:</strong> Links are defined as an array of objects and rendered with <code>.map()</code>. Adding a new nav item only requires adding one object to this array — no JSX changes needed. This is cleaner than hardcoding four separate <code>&lt;Link&gt;</code> elements.</p>
+  </div>
+  <pre>const isActive = (to) => location.pathname === to</pre>
+  <div class="explain">
+    <p><strong>useLocation():</strong> From React Router. Returns the current URL's pathname. <code>isActive</code> compares it to each link's <code>to</code> path. When it matches, the link gets the purple active style; otherwise the gray hover style. This is how the nav highlights the current page.</p>
+  </div>
+  <pre>const handleLogout = async () => {
+  await supabase.auth.signOut()
+  logout()
+  ...
+  navigate('/')
+}</pre>
+  <div class="explain">
+    <p><strong>Two-part logout:</strong> First <code>supabase.auth.signOut()</code> — this invalidates the session in Supabase and removes the token from localStorage. Then <code>logout()</code> — this clears the Zustand store (user=null, profile=null). Both are needed: without supabase.signOut(), the localStorage token persists and the user gets auto-logged back in on next refresh.</p>
+  </div>
+  <pre>&lt;div className="fixed inset-0 z-10" onClick={() => setUserMenuOpen(false)} /&gt;</pre>
+  <div class="explain">
+    <p><strong>Click-outside to close dropdown:</strong> When the user menu is open, a transparent full-screen overlay is placed behind the dropdown. Clicking anywhere outside the menu clicks this invisible div, which calls <code>setUserMenuOpen(false)</code>. Classic UX pattern — no complex event propagation needed.</p>
+  </div>
+  <pre>{profile?.role === 'admin' &amp;&amp; (
+  &lt;Link to="/admin"&gt;Admin Panel&lt;/Link&gt;
+)}</pre>
+  <div class="explain">
+    <p><strong>Role-based UI:</strong> The Admin Panel link only renders if <code>profile.role === 'admin'</code>. This is checked from the Zustand store (which loaded from Supabase after login). The route <code>/admin</code> is also protected server-side by ProtectedRoute with <code>adminOnly</code>, so even if someone manually navigates there, they can't access it without the role.</p>
+  </div>
+  <pre>&lt;nav className="sticky top-0 z-40 bg-white/80 dark:bg-[#0f0a1e]/80 backdrop-blur-md ..."&gt;</pre>
+  <div class="explain">
+    <p><strong>Glassmorphism nav:</strong> <code>sticky top-0</code> keeps it pinned as you scroll. <code>bg-white/80</code> means white with 80% opacity. <code>backdrop-blur-md</code> blurs whatever is behind it. Together these create the frosted-glass look where you can faintly see content scrolling under the nav.</p>
+  </div>
+</div>
+
+<!-- Footer -->
+<div class="section" id="footer">
+  <div class="section-header">
+    <div class="file-tag">client/src/components/layout/Footer.jsx</div>
+    <h2>Footer</h2>
+    <div class="type-badge">Layout Component</div>
+  </div>
+  <pre>export default function Footer() {
+  return (
+    &lt;footer className="border-t ... mt-auto"&gt;
+      &lt;div className="container-app py-8"&gt;
+        Logo · Tagline · Social links
+      &lt;/div&gt;
+    &lt;/footer&gt;
+  )
+}</pre>
+  <div class="explain">
+    <p>Simple presentational component. <code>mt-auto</code> pushes it to the bottom because App.jsx wraps everything in a <code>flex flex-col min-h-screen</code> div with <code>&lt;main className="flex-1"&gt;</code>. The flex-1 main takes up all available height, and footer naturally sits at the bottom.</p>
+  </div>
+</div>
+
+<!-- Button -->
+<div class="section" id="button">
+  <div class="section-header">
+    <div class="file-tag">client/src/components/common/Button.jsx</div>
+    <h2>Button Component</h2>
+    <div class="type-badge">Reusable UI</div>
+  </div>
+  <pre>const variants = {
+  primary:   'btn-primary',
+  secondary: 'btn-secondary',
+  ghost:     'btn-ghost',
+  danger:    'btn-danger',
+  outline:   'btn border-2 bg-transparent',
+}
+const sizes = {
+  sm: 'btn-sm', md: '', lg: 'btn-lg', icon: 'btn-icon',
+}
+
+export default function Button({ children, variant = 'primary', size = 'md',
+  className = '', loading = false, ...props }) {
+  return (
+    &lt;button
+      className={`btn ${variants[variant]} ${sizes[size]} ${className}`}
+      disabled={loading || props.disabled}
+      {...props}
+    &gt;
+      {loading &amp;&amp; &lt;span className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" /&gt;}
+      {children}
+    &lt;/button&gt;
+  )
+}</pre>
+  <div class="explain">
+    <p><strong>variant lookup:</strong> Instead of if/else chains, we use a plain object as a lookup table. <code>variants[variant]</code> returns the CSS class string. Default is <code>'primary'</code>.</p>
+    <p><strong>loading spinner:</strong> When <code>loading={true}</code>, a small spinning circle appears inline before children. The button is also disabled via <code>disabled={loading || props.disabled}</code> to prevent double-submits.</p>
+    <p><strong>...props spread:</strong> Any extra HTML attribute (onClick, type, disabled, etc.) is forwarded to the button element via rest props. This means <code>&lt;Button type="submit"&gt;</code> works without extra code.</p>
+    <p><strong>className prop:</strong> Allows callers to add extra Tailwind classes on top of the base button styles: <code>&lt;Button className="w-full"&gt;</code>.</p>
+  </div>
+</div>
+
+<!-- Input -->
+<div class="section" id="input">
+  <div class="section-header">
+    <div class="file-tag">client/src/components/common/Input.jsx</div>
+    <h2>Input Component</h2>
+    <div class="type-badge">Reusable UI</div>
+  </div>
+  <pre>export default function Input({ label, error, className = '', icon: Icon, ...props }) {
+  return (
+    &lt;div className="w-full"&gt;
+      {label &amp;&amp; &lt;label className="input-label"&gt;{label}&lt;/label&gt;}
+      &lt;div className="relative"&gt;
+        {Icon &amp;&amp; (
+          &lt;span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"&gt;
+            &lt;Icon size={16} /&gt;
+          &lt;/span&gt;
+        )}
+        &lt;input
+          className={`input ${Icon ? 'pl-9' : ''} ${error ? 'border-red-400 focus:ring-red-200' : ''} ${className}`}
+          {...props}
+        /&gt;
+      &lt;/div&gt;
+      {error &amp;&amp; &lt;p className="input-error"&gt;{error}&lt;/p&gt;}
+    &lt;/div&gt;
+  )
+}</pre>
+  <div class="explain">
+    <p><strong>icon: Icon</strong> — Destructuring with rename. The prop is called <code>icon</code> (lowercase) but renamed to <code>Icon</code> (uppercase) because React requires component names to start with uppercase. Usage: <code>&lt;Input icon={RiMailLine} /&gt;</code>.</p>
+    <p><strong>pl-9:</strong> Left padding of 36px to make room for the icon so they don't overlap.</p>
+    <p><strong>Absolute positioning:</strong> The icon sits absolutely inside the relative container, centered vertically with <code>top-1/2 -translate-y-1/2</code>.</p>
+    <p><strong>error state:</strong> Red border + red ring on focus. Error message renders below the input only when <code>error</code> prop is truthy.</p>
+  </div>
+</div>
+
+<!-- Avatar -->
+<div class="section" id="avatar">
+  <div class="section-header">
+    <div class="file-tag">client/src/components/common/Avatar.jsx</div>
+    <h2>Avatar Component</h2>
+    <div class="type-badge">Reusable UI</div>
+  </div>
+  <pre>const initials = name.split(' ').map(w =&gt; w[0]).join('').slice(0, 2).toUpperCase()
+
+if (src) {
+  return &lt;img src={src} alt={name} className={`${sizes[size]} rounded-full object-cover ...`} /&gt;
+}
+return (
+  &lt;div className={`${sizes[size]} rounded-full bg-gradient-brand flex items-center justify-center ...`}&gt;
+    {initials || '?'}
+  &lt;/div&gt;
+)</pre>
+  <div class="explain">
+    <p><strong>Initials generation:</strong> Split name by space → take first character of each word → join → max 2 characters → uppercase. "Abhay Kumar" → ["A","K"] → "AK".</p>
+    <p><strong>Fallback:</strong> If <code>src</code> is provided, show the image. Otherwise show initials on a purple gradient background. If name is empty, show "?" as fallback.</p>
+    <p><strong>object-cover:</strong> For images, fills the circular space without distorting the aspect ratio (crops if needed).</p>
+  </div>
+</div>
+
+<!-- Badge -->
+<div class="section" id="badge">
+  <div class="section-header">
+    <div class="file-tag">client/src/components/common/Badge.jsx</div>
+    <h2>Badge Component</h2>
+    <div class="type-badge">Reusable UI</div>
+  </div>
+  <pre>const variants = {
+  purple: 'badge-purple', green: 'badge-green', amber: 'badge-amber',
+  red: 'badge-red', gray: 'badge-gray',
+}
+export default function Badge({ children, variant = 'purple', className = '' }) {
+  return &lt;span className={`${variants[variant]} ${className}`}&gt;{children}&lt;/span&gt;
+}</pre>
+  <div class="explain">
+    <p>Tiny component — only 10 lines. Maps a variant name to a CSS class. The actual colors (background, text) are defined in <code>index.css</code> as <code>.badge-purple { ... }</code>. Usage: <code>&lt;Badge variant="green"&gt;beginner&lt;/Badge&gt;</code>.</p>
+  </div>
+</div>
+
+<!-- TokenChip -->
+<div class="section" id="tokenchip">
+  <div class="section-header">
+    <div class="file-tag">client/src/components/common/TokenChip.jsx</div>
+    <h2>TokenChip Component</h2>
+    <div class="type-badge">Reusable UI</div>
+  </div>
+  <pre>import { RiCopperCoinLine } from 'react-icons/ri'
+
+export default function TokenChip({ amount, className = '' }) {
+  return (
+    &lt;span className={`token-chip ${className}`}&gt;
+      &lt;RiCopperCoinLine size={14} /&gt;
+      {amount}
+    &lt;/span&gt;
+  )
+}</pre>
+  <div class="explain">
+    <p>The coin icon + number combination appears everywhere — content cards, Navbar balance, content unlock button. Centralizing it as a component means if we change the icon or styling, it updates everywhere instantly.</p>
+  </div>
+</div>
+
+<!-- Modal -->
+<div class="section" id="modal">
+  <div class="section-header">
+    <div class="file-tag">client/src/components/common/Modal.jsx</div>
+    <h2>Modal Component</h2>
+    <div class="type-badge">Reusable UI</div>
+  </div>
+  <pre>useEffect(() => {
+  if (open) document.body.style.overflow = 'hidden'
+  else document.body.style.overflow = ''
+  const onKey = (e) => { if (e.key === 'Escape' &amp;&amp; open) onClose?.() }
+  window.addEventListener('keydown', onKey)
+  return () => {
+    document.body.style.overflow = ''
+    window.removeEventListener('keydown', onKey)
+  }
+}, [open, onClose])</pre>
+  <div class="explain">
+    <p><strong>Body scroll lock:</strong> When a modal is open, we don't want the background page to scroll. <code>document.body.style.overflow = 'hidden'</code> prevents that. The cleanup function (returned from useEffect) restores it when the modal closes or the component unmounts.</p>
+    <p><strong>Escape key:</strong> The keyboard event listener enables pressing Escape to close the modal. <code>onClose?.()</code> uses optional chaining — if <code>onClose</code> is not provided, it silently does nothing instead of throwing.</p>
+    <p><strong>Cleanup:</strong> The return function removes the event listener. Without this, every time the modal opens and closes, a new listener is added but old ones stack up (memory leak).</p>
+  </div>
+  <pre>if (!open) return null</pre>
+  <div class="explain">
+    <p>Early return pattern. If modal is not open, nothing renders at all — no DOM nodes, no z-index issues. React unmounts and remounts children on open/close, so state inside modals resets automatically.</p>
+  </div>
+  <pre>&lt;div className="absolute inset-0 bg-black/40 backdrop-blur-sm animate-fade-in" onClick={onClose} /&gt;</pre>
+  <div class="explain">
+    <p><strong>Backdrop click to close:</strong> The semi-transparent dark overlay behind the modal is a div that covers the full screen. Clicking it triggers <code>onClose</code>. This is separate from the white modal card so clicking the modal itself doesn't close it.</p>
+  </div>
+</div>
+
+<!-- Skeleton -->
+<div class="section" id="skeleton">
+  <div class="section-header">
+    <div class="file-tag">client/src/components/common/Skeleton.jsx</div>
+    <h2>Skeleton &amp; CardSkeleton</h2>
+    <div class="type-badge">Loading UI</div>
+  </div>
+  <pre>export default function Skeleton({ className = '', rows = 1 }) {
+  if (rows > 1) {
+    return (
+      &lt;div className="space-y-3"&gt;
+        {Array.from({ length: rows }).map((_, i) => (
+          &lt;div key={i} className={`skeleton h-4 ${i === rows - 1 ? 'w-3/4' : 'w-full'} ${className}`} /&gt;
+        ))}
+      &lt;/div&gt;
+    )
+  }
+  return &lt;div className={`skeleton ${className}`} /&gt;
+}
+
+export function CardSkeleton() {
+  return (
+    &lt;div className="card space-y-4"&gt;
+      &lt;Skeleton className="h-40 w-full rounded-xl" /&gt;
+      &lt;Skeleton className="h-4 w-3/4" /&gt;
+      &lt;Skeleton className="h-3 w-1/2" /&gt;
+      &lt;div className="flex gap-2"&gt;
+        &lt;Skeleton className="h-6 w-16 rounded-full" /&gt;
+        &lt;Skeleton className="h-6 w-16 rounded-full" /&gt;
+      &lt;/div&gt;
+    &lt;/div&gt;
+  )
+}</pre>
+  <div class="explain">
+    <p><strong>Skeleton loading:</strong> Instead of showing a spinner while content loads, we show gray animated placeholder shapes that match the layout of the real content. Users see something immediately and don't experience layout shift when content appears.</p>
+    <p><strong>Array.from({ length: rows }):</strong> Creates an array of <code>rows</code> empty slots to map over. Used to render multiple skeleton lines without hardcoding them.</p>
+    <p><strong>Last line shorter (w-3/4):</strong> Real text lines are rarely all the same length — the last line is often shorter. This mimics that natural pattern, making skeletons look more realistic.</p>
+    <p><strong>CardSkeleton:</strong> A composite skeleton that looks like a content card — image placeholder, title, subtitle, two badge shapes. Used in Browse.jsx while content loads.</p>
+    <p><strong>.skeleton CSS class:</strong> Defined in index.css with a shimmer animation (gradient moving left to right) to give the "loading" feel.</p>
+  </div>
+</div>
+
+<!-- Loader -->
+<div class="section" id="loader">
+  <div class="section-header">
+    <div class="file-tag">client/src/components/common/Loader.jsx</div>
+    <h2>Loader &amp; PageLoader</h2>
+    <div class="type-badge">Loading UI</div>
+  </div>
+  <pre>export default function Loader({ size = 'md', className = '' }) {
+  const s = { sm: 'w-4 h-4 border-2', md: 'w-8 h-8 border-2', lg: 'w-12 h-12 border-3' }
+  return &lt;div className={`${s[size]} border-brand-200 border-t-brand-600 rounded-full animate-spin ${className}`} /&gt;
+}
+
+export function PageLoader() {
+  return (
+    &lt;div className="min-h-screen flex items-center justify-center ..."&gt;
+      &lt;div className="flex flex-col items-center gap-4"&gt;
+        &lt;div className="w-12 h-12 border-3 border-brand-200 border-t-brand-600 rounded-full animate-spin" /&gt;
+        &lt;p className="text-sm text-gray-500 ... animate-pulse-slow"&gt;Loading...&lt;/p&gt;
+      &lt;/div&gt;
+    &lt;/div&gt;
+  )
+}</pre>
+  <div class="explain">
+    <p><strong>CSS spinner technique:</strong> A div with <code>rounded-full</code> (circle), <code>border</code> (ring), but <code>border-t-brand-600</code> (only top border colored). With <code>animate-spin</code>, the colored top border rotates creating the spinning loader effect.</p>
+    <p><strong>PageLoader:</strong> Full-screen centered loader. Used by ProtectedRoute while waiting for auth state to confirm, and by AdminPanel during data loading.</p>
+    <p><strong>Named export + default export:</strong> The file exports both a default (Loader) and a named export (PageLoader). You import them differently: <code>import Loader from './Loader'</code> vs <code>import { PageLoader } from './Loader'</code>.</p>
+  </div>
+</div>
+
+<!-- EmptyState -->
+<div class="section" id="emptystate">
+  <div class="section-header">
+    <div class="file-tag">client/src/components/common/EmptyState.jsx</div>
+    <h2>EmptyState Component</h2>
+    <div class="type-badge">Reusable UI</div>
+  </div>
+  <pre>export default function EmptyState({ icon: Icon, title, description, action }) {
+  return (
+    &lt;div className="flex flex-col items-center justify-center py-16 text-center animate-fade-in"&gt;
+      {Icon &amp;&amp; (
+        &lt;div className="w-16 h-16 rounded-2xl bg-brand-50 dark:bg-brand-950 flex items-center justify-center mb-4 shadow-neu dark:shadow-neu-dark"&gt;
+          &lt;Icon size={28} className="text-brand-500" /&gt;
+        &lt;/div&gt;
+      )}
+      &lt;h3 className="text-lg font-semibold ..."&gt;{title}&lt;/h3&gt;
+      {description &amp;&amp; &lt;p className="text-sm text-gray-500 ..."&gt;{description}&lt;/p&gt;}
+      {action &amp;&amp; &lt;div className="mt-4"&gt;{action}&lt;/div&gt;}
+    &lt;/div&gt;
+  )
+}</pre>
+  <div class="explain">
+    <p><strong>Compound slot pattern:</strong> The <code>action</code> prop accepts JSX (any button or link). This makes the component flexible — the caller decides what action to show, EmptyState just renders it. Example: <code>&lt;EmptyState action={&lt;Button&gt;Upload&lt;/Button&gt;} /&gt;</code>.</p>
+    <p><strong>Conditional rendering:</strong> All four parts (icon, title, description, action) render only if provided. This makes one component work for many cases: empty search, no uploads, no bookmarks, etc.</p>
+  </div>
+</div>
+
+<!-- index.js -->
+<div class="section" id="index-js">
+  <div class="section-header">
+    <div class="file-tag">client/src/components/common/index.js</div>
+    <h2>Barrel Export File</h2>
+    <div class="type-badge">Module Pattern</div>
+  </div>
+  <pre>export { default as Button }    from './Button'
+export { default as Input }     from './Input'
+export { default as Badge }     from './Badge'
+export { default as Modal }     from './Modal'
+export { default as Loader }    from './Loader'
+export { default as Skeleton }  from './Skeleton'
+export { default as Avatar }    from './Avatar'
+export { default as TokenChip } from './TokenChip'
+export { default as EmptyState } from './EmptyState'
+export { default as ProtectedRoute } from './ProtectedRoute'</pre>
+  <div class="explain">
+    <p><strong>Barrel export:</strong> This file re-exports everything from the <code>common</code> folder. Without it, every import would need the full path: <code>import Button from '../components/common/Button'</code>. With the barrel, it becomes: <code>import { Button, Input, Badge } from '../components/common'</code>. One line to import multiple components.</p>
+    <p><strong>export { default as Button }:</strong> Button.jsx uses <code>export default function Button</code>. To re-export a default as a named export, you use this syntax. The <code>as Button</code> gives it the name in the barrel's namespace.</p>
+  </div>
+</div>
+
+<!-- Home -->
+<div class="section" id="home">
+  <div class="section-header">
+    <div class="file-tag">client/src/pages/Home.jsx</div>
+    <h2>Home Page</h2>
+    <div class="type-badge">Marketing / Landing</div>
+  </div>
+  <pre>const stats = [
+  { label: 'Active Learners', value: '2,400+' },
+  { label: 'Topics Covered',  value: '380+'   },
+  ...
+]
+const sampleContent = [
+  { title: 'DBMS — Normalization...', creator: 'Aryan S.', type: 'video', cost: 5, ... },
+  ...
+]</pre>
+  <div class="explain">
+    <p><strong>Static data:</strong> The stats and sample content are hardcoded constants — not from the database. This is intentional for the landing page. Real usage stats would require a DB aggregate query which adds latency and cost. Static numbers load instantly and are good for marketing. The sample cards link to /browse anyway.</p>
+  </div>
+  <pre>const { user } = useAuthStore()
+// ...
+&lt;Link to={user ? '/browse' : '/register'}&gt;
+  {user ? 'Browse Topics' : 'Start Learning Free'}
+&lt;/Link&gt;</pre>
+  <div class="explain">
+    <p><strong>Conditional CTA based on auth state:</strong> If logged in, the button says "Browse Topics" and goes to /browse. If not logged in, "Start Learning Free" → /register. The Navbar also conditionally shows Login/Signup vs Upload/Profile buttons.</p>
+  </div>
+  <div class="highlight">Key interview point: The hero section uses CSS <code>blur-3xl</code> blobs for visual depth — absolutely positioned gradient circles with blur that create an ambient glow effect common in modern SaaS designs. No images needed, pure CSS.</div>
+</div>
+
+<!-- Login -->
+<div class="section" id="login">
+  <div class="section-header">
+    <div class="file-tag">client/src/pages/Login.jsx</div>
+    <h2>Login Page</h2>
+    <div class="type-badge">Auth Flow</div>
+  </div>
+  <pre>const [resetMode, setResetMode] = useState(false)
+
+useEffect(() => {
+  const hash = window.location.hash
+  if (hash.includes('type=recovery')) {
+    setResetMode(true)
+  }
+}, [])</pre>
+  <div class="explain">
+    <p><strong>Password reset detection:</strong> When a user clicks "Forgot password?", Supabase sends them a recovery email. Clicking that link redirects them back to <code>/login#type=recovery&amp;access_token=...</code>. The useEffect on mount checks the URL hash for <code>type=recovery</code> and switches to "Set New Password" mode.</p>
+  </div>
+  <pre>const handleForgotPassword = async () => {
+  const { error } = await supabase.auth.resetPasswordForEmail(form.email, {
+    redirectTo: `${window.location.origin}/login`,
+  })
+  toast.success('Password reset link sent! Check your email.')
+}</pre>
+  <div class="explain">
+    <p><strong>Supabase password reset:</strong> <code>resetPasswordForEmail</code> triggers Supabase to send a magic reset link. <code>redirectTo</code> tells Supabase where to redirect after the user clicks the email link — back to our <code>/login</code> page which detects the recovery token in the hash.</p>
+  </div>
+  <pre>const submit = async e => {
+  const { data, error } = await supabase.auth.signInWithPassword({...})
+  setUser(data.user)
+  const { data: profile } = await supabase.from('profiles').select('*').eq('id', data.user.id).single()
+  setProfile(profile)
+  navigate('/')
+}</pre>
+  <div class="explain">
+    <p><strong>Two-step login:</strong> First authenticate with Supabase (JWT is stored in localStorage automatically). Then fetch the profile row (username, token_balance, role, etc.) and put it in Zustand so every page can access it without re-querying.</p>
+    <p><strong>Why fetch profile separately?</strong> Supabase's auth.user contains email and ID but not your custom columns like token_balance. Those live in the profiles table which you query separately.</p>
+  </div>
+</div>
+
+<!-- Register -->
+<div class="section" id="register">
+  <div class="section-header">
+    <div class="file-tag">client/src/pages/Register.jsx</div>
+    <h2>Register Page — 2-Step OTP Flow</h2>
+    <div class="type-badge">Auth Flow</div>
+  </div>
+  <pre>const [step, setStep] = useState(1) // 1: form, 2: OTP entry
+const [resendIn, setResendIn] = useState(0) // countdown seconds
+
+useEffect(() => {
+  if (resendIn &lt;= 0) return
+  const t = setInterval(() => setResendIn(s => s - 1), 1000)
+  return () => clearInterval(t)
+}, [resendIn])</pre>
+  <div class="explain">
+    <p><strong>Resend countdown:</strong> After sending the OTP, we set <code>resendIn = 30</code>. The useEffect fires whenever <code>resendIn</code> changes. It starts a 1-second interval that decrements the counter. At 0, the interval stops. The return cleanup clears the interval. This prevents the user from spamming verification emails.</p>
+  </div>
+  <pre>const validatePassword = pw => {
+  if (pw.length &lt; 8) return 'Min 8 characters'
+  if (!/[A-Z]/.test(pw)) return 'Add an uppercase letter'
+  if (!/[a-z]/.test(pw)) return 'Add a lowercase letter'
+  if (!/[0-9]/.test(pw)) return 'Add a number'
+  if (!/[^A-Za-z0-9]/.test(pw)) return 'Add a special character'
+  return null
+}</pre>
+  <div class="explain">
+    <p><strong>Password strength validation:</strong> Uses regex to test each character class. Returns an error message string or null if valid. <code>/[^A-Za-z0-9]/.test(pw)</code> checks for at least one character that is NOT a letter or number (i.e., a special character like @, #, !, etc.).</p>
+  </div>
+  <pre>// Step 2: submit the OTP + create the account
+const verifyRes = await fetch('.../api/auth/verify-code', { body: JSON.stringify({ email, code }) })
+if (!verifyRes.ok) throw new Error('Invalid or expired code')
+
+const { error } = await supabase.auth.signUp({ email, password, options: { data: { username } } })
+const { data: loginData } = await supabase.auth.signInWithPassword({ email, password })</pre>
+  <div class="explain">
+    <p><strong>3-step registration:</strong> (1) Verify the custom OTP via our server. (2) Create the Supabase auth user (which triggers <code>handle_new_user()</code> DB trigger to create the profile with 50 tokens). (3) Auto-login — sign in immediately so the user doesn't have to login separately.</p>
+    <p><strong>Why custom OTP + Supabase signUp?</strong> Supabase's built-in email verification sends its own email. We wanted a custom branded email (BrainBarter template via SendGrid) so we handle verification ourselves. Supabase email confirmation can be disabled in the dashboard to allow this.</p>
+  </div>
+</div>
+
+<!-- Browse -->
+<div class="section" id="browse">
+  <div class="section-header">
+    <div class="file-tag">client/src/pages/Browse.jsx</div>
+    <h2>Browse Page</h2>
+    <div class="type-badge">Content Discovery</div>
+  </div>
+  <pre>// Effect 1: Load subjects on mount
+useEffect(() => {
+  supabase.from('subjects').select('*').order('semester')
+    .then(({ data }) => {
+      setSubjects(data || [])
+      if (data?.length) setSelectedSubject(data[0])  // auto-select first
+      setLoadingSubjects(false)
+    })
+}, [])
+
+// Effect 2: Reload content when selected subject changes
+useEffect(() => {
+  if (!selectedSubject) return
+  setLoadingContent(true)
+  supabase.from('content')
+    .select('*, creator:profiles(username, is_verified)')
+    .eq('is_published', true)
+    .then(({ data }) => {
+      const filtered = (data || []).filter(c =>
+        !c.subject_name || c.subject_name === selectedSubject.name
+      )
+      setContent(filtered)
+      setLoadingContent(false)
+    })
+}, [selectedSubject])</pre>
+  <div class="explain">
+    <p><strong>Two separate useEffects:</strong> The first runs once on mount (empty deps array) to load subjects. The second runs whenever <code>selectedSubject</code> changes. When the user clicks a different subject in the sidebar, <code>setSelectedSubject(s)</code> triggers the second effect to refetch content for that subject.</p>
+    <p><strong>Joined query:</strong> <code>creator:profiles(username, is_verified)</code> is Supabase's syntax for a foreign key join. It fetches <code>username</code> and <code>is_verified</code> from the profiles table where <code>creator_id = profiles.id</code>. The result is a nested object: <code>c.creator.username</code>.</p>
+    <p><strong>is_published filter:</strong> Only approved/published content shows in Browse. Creators see all their drafts in the Dashboard.</p>
+  </div>
+  <pre>const filtered = content.filter(c => {
+  const matchSearch = c.title.toLowerCase().includes(search.toLowerCase())
+  const matchDiff   = difficulty === 'All' || c.difficulty === difficulty
+  const matchType   = type === 'All' || c.type === type
+  return matchSearch &amp;&amp; matchDiff &amp;&amp; matchType
+})</pre>
+  <div class="explain">
+    <p><strong>Client-side filtering:</strong> Search/difficulty/type filters run in the browser on the already-fetched content array. No extra API calls on each filter change — instant filtering. This works well when there are under a few thousand content items. For scale, server-side filtering (Supabase query params) would be needed.</p>
+  </div>
+</div>
+
+<!-- Profile -->
+<div class="section" id="profile">
+  <div class="section-header">
+    <div class="file-tag">client/src/pages/Profile.jsx</div>
+    <h2>Profile Page</h2>
+    <div class="type-badge">User Dashboard</div>
+  </div>
+  <pre>useEffect(() => {
+  if (!profile) return
+  supabase.from('bookmarks').select('*, content(id, title, type)').eq('user_id', profile.id)
+    .then(({ data }) => setBookmarks(data || []))
+  supabase.from('progress').select('*, topic:topics(name, unit:units(subject:subjects(name)))')
+    .eq('user_id', profile.id)
+    .then(({ data }) => setProgress(data || []))
+  supabase.from('content').select('id', { count: 'exact' }).eq('creator_id', profile.id)
+    .then(({ count }) => setStats(s => ({ ...s, uploads: count || 0 })))
+}, [profile])</pre>
+  <div class="explain">
+    <p><strong>Three parallel queries:</strong> All three fetch calls are initiated in the same useEffect without awaiting each other — they run in parallel. Supabase returns data via .then(), so they execute simultaneously. This is much faster than sequential awaits (total time = slowest query, not sum of all).</p>
+    <p><strong>Deep nested join:</strong> The progress query joins topics → units → subjects to get the full path name for display. Supabase allows multiple levels of foreign key joins using nested object syntax.</p>
+    <p><strong>count: 'exact'</strong>: When you only need the count and not the actual rows, this option makes Supabase return the count in headers without fetching all row data.</p>
+  </div>
+  <pre>const saveProfile = async () => {
+  const { data, error } = await supabase.from('profiles')
+    .update({ username: form.username, bio: form.bio })
+    .eq('id', profile.id).select().single()
+  if (error) return toast.error(error.message)
+  setProfile(data)  // update Zustand store
+  setEditing(false)
+}</pre>
+  <div class="explain">
+    <p><strong>Profile update flow:</strong> Update only the allowed fields (username, bio). The RLS policy on profiles blocks changing token_balance or role. After success, update the Zustand store with the fresh data from the server — this updates the Navbar's displayed username immediately without page refresh.</p>
+  </div>
+</div>
+
+<!-- CreatorDashboard -->
+<div class="section" id="dashboard">
+  <div class="section-header">
+    <div class="file-tag">client/src/pages/CreatorDashboard.jsx</div>
+    <h2>Creator Dashboard</h2>
+    <div class="type-badge">Content Management</div>
+  </div>
+  <pre>const togglePublish = async (id) => {
+  const content = uploads.find(c => c.id === id)
+  const { error } = await supabase.from('content')
+    .update({ is_published: !content.is_published })
+    .eq('id', id)
+  if (error) { toast.error('Failed to update'); return }
+  setUploads(u => u.map(c => c.id === id ? { ...c, is_published: !c.is_published } : c))
+  toast.success(content.is_published ? 'Unpublished' : 'Published!')
+}</pre>
+  <div class="explain">
+    <p><strong>Optimistic update:</strong> After the DB update succeeds, we update the local state by mapping over the uploads array and toggling the one that changed. We don't re-fetch all content from the server — we just patch the specific item in the existing array. The spread <code>{ ...c, is_published: !c.is_published }</code> creates a new object (React needs new references for re-rendering).</p>
+  </div>
+  <pre>const deleteContent = async (id) => {
+  if (!confirm('Delete this content? This cannot be undone.')) return
+  const { error } = await supabase.from('content').delete().eq('id', id)
+  if (error) { toast.error('Failed to delete'); return }
+  setUploads(u => u.filter(c => c.id !== id))
+}</pre>
+  <div class="explain">
+    <p><strong>Confirmation guard:</strong> <code>confirm()</code> shows a native browser dialog. If the user clicks Cancel, the function returns early. Only on OK does the delete proceed. Simple but effective for destructive actions.</p>
+    <p><strong>Filter to remove:</strong> <code>u.filter(c => c.id !== id)</code> creates a new array excluding the deleted item. More efficient than re-fetching the entire list from the server.</p>
+  </div>
+  <pre>const totalViews = uploads.reduce((a, c) => a + (c.views || 0), 0)</pre>
+  <div class="explain">
+    <p><strong>reduce:</strong> Sums all view counts across the creator's uploads. <code>a</code> is the accumulator (starts at 0), <code>c</code> is each upload item. <code>(c.views || 0)</code> defaults to 0 if views is null/undefined.</p>
+  </div>
+</div>
+
+<!-- AdminPanel -->
+<div class="section" id="admin">
+  <div class="section-header">
+    <div class="file-tag">client/src/pages/AdminPanel.jsx</div>
+    <h2>Admin Panel</h2>
+    <div class="type-badge">Administration</div>
+  </div>
+
+  <div class="sub-head">Withdrawal Handling — Double-Refund Protection</div>
+  <pre>} else if (action === 'reject') {
+  if (request.status !== 'pending') return toast.error('This request was already processed')
+  const reason = prompt('Rejection reason:')
+  if (!reason) return
+
+  // Mark rejected FIRST, only if still pending
+  const { data: updated, error } = await supabase.from('withdrawal_requests')
+    .update({ status: 'rejected', admin_note: reason, processed_at: new Date().toISOString() })
+    .eq('id', id)
+    .eq('status', 'pending')  // ← atomic guard
+    .select()
+
+  if (error || !updated?.length) {
+    return toast.error('Could not reject — it may already be processed')
+  }
+
+  // Now refund tokens
+  const { error: refundError } = await supabase.rpc('refund_tokens', {
+    p_user_id: request.user_id, p_amount: request.tokens_amount, p_reason: `Withdrawal rejected: ${reason}`,
+  })
+}</pre>
+  <div class="explain">
+    <p><strong>Double-refund prevention:</strong> This is a critical pattern. Two admins could theoretically click "Reject" simultaneously. Without the guard, both would refund the tokens, giving the user 2x the tokens back.</p>
+    <p><strong>.eq('status', 'pending')</strong>: The SQL UPDATE includes <code>WHERE status = 'pending'</code>. If another admin already rejected it, the status is 'rejected' and this UPDATE matches 0 rows. The <code>.select()</code> returns the updated rows, and <code>!updated?.length</code> tells us nothing was changed — we show an error instead of refunding.</p>
+    <p><strong>Order matters:</strong> Mark rejected FIRST, then refund. If we refunded first and the reject-mark failed, the user gets their tokens back AND their withdrawal is still "pending" — they could withdraw again. The current order is safe.</p>
+  </div>
+
+  <div class="sub-head">5 Admin Tabs</div>
+  <table>
+    <tr><th>Tab</th><th>What it shows</th><th>Admin actions</th></tr>
+    <tr><td>Withdrawals</td><td>All withdrawal requests with user details, amount, method</td><td>Approve (enter txn ID) or Reject &amp; Refund</td></tr>
+    <tr><td>Feedback</td><td>User feedback submissions with category</td><td>Mark Reviewed / Done</td></tr>
+    <tr><td>Reports</td><td>Content reports with reason and reporter</td><td>Resolve or Remove content</td></tr>
+    <tr><td>Verify Creators</td><td>All profiles sorted by token balance</td><td>Toggle is_verified badge</td></tr>
+    <tr><td>Content</td><td>All content (latest 50) with creator info</td><td>Publish or Unpublish</td></tr>
+  </table>
+</div>
+
+<!-- Leaderboard -->
+<div class="section" id="leaderboard">
+  <div class="section-header">
+    <div class="file-tag">client/src/pages/Leaderboard.jsx</div>
+    <h2>Leaderboard Page</h2>
+    <div class="type-badge">Gamification</div>
+  </div>
+  <pre>useEffect(() => {
+  setLoading(true)
+  let query = supabase.from('token_transactions').select('user_id, amount')
+  const now = new Date()
+  if (period === 'week') {
+    query = query.gte('created_at', new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000).toISOString())
+  } else if (period === 'month') {
+    query = query.gte('created_at', new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000).toISOString())
+  }
+  query.eq('type', 'earn').then(async ({ data: txns }) => {
+    const userEarnings = {}
+    txns.forEach(t => { userEarnings[t.user_id] = (userEarnings[t.user_id] || 0) + (t.amount || 0) })
+    const userIds = Object.keys(userEarnings).sort((a, b) => userEarnings[b] - userEarnings[a]).slice(0, 10)
+    const { data: profiles } = await supabase.from('profiles')
+      .select('id, username, avatar_url, token_balance, is_verified')
+      .in('id', userIds)
+    const sorted = userIds.map(uid => profiles.find(p => p.id === uid)).filter(Boolean)
+    setLeaders(sorted)
+  })
+}, [period])</pre>
+  <div class="explain">
+    <p><strong>Period filtering:</strong> <code>.gte('created_at', timestamp)</code> filters transactions newer than N days. For 'all', no date filter — all time. The query is built dynamically by chaining conditions.</p>
+    <p><strong>Client-side aggregation:</strong> Fetch all earn transactions, group by user_id using a plain object as a hash map, sort by total earnings, take top 10. Then fetch profile details for those 10 users.</p>
+    <p><strong>Sort preservation:</strong> <code>userIds.map(uid => profiles.find(...))</code> maps over the SORTED userIds array, finding each profile. This preserves ranking order since Supabase's <code>.in()</code> doesn't guarantee order.</p>
+  </div>
+  <pre>// Podium layout: 2nd, 1st, 3rd left-to-right (visual pyramid)
+{[top3[1], top3[0], top3[2]].map((u, i) => {
+  const actualRank = i === 0 ? 2 : i === 1 ? 1 : 3
+  const heights = ['h-28', 'h-36', 'h-24']  // 2nd, 1st, 3rd heights
+</pre>
+  <div class="explain">
+    <p><strong>Podium reordering:</strong> The visual podium shows [2nd, 1st, 3rd] from left to right — not [1st, 2nd, 3rd]. This is the classic Olympic/award podium look where 1st place stands tallest in the center. The array is reordered before mapping.</p>
+  </div>
+</div>
+
+<!-- SQL -->
+<div class="section" id="sql">
+  <div class="section-header">
+    <div class="file-tag">client/COMPLETE_SETUP.sql</div>
+    <h2>Database Setup — Full SQL Explained</h2>
+    <div class="type-badge">PostgreSQL + pgvector</div>
+  </div>
+
+  <div class="sub-head">Email Verification Codes Table</div>
+  <pre>create table if not exists email_verification_codes (
+  email      text primary key,  -- one pending code per email address
+  code       text not null,
+  expires_at timestamptz not null,
+  created_at timestamptz default now()
+);
+alter table email_verification_codes enable row level security;
+create policy "No client access to verification codes" on email_verification_codes
+  for all using (false);  -- blocks ALL client access; server uses service_role which bypasses RLS</pre>
+  <div class="explain">
+    <p><strong>email as primary key:</strong> Each email can only have ONE pending verification code at a time. If you request a new code, the <code>upsert({ onConflict: 'email' })</code> in authController replaces the old row. This prevents stale codes from being valid.</p>
+    <p><strong>RLS blocks all clients:</strong> <code>using (false)</code> evaluates to false for ALL rows for client connections. Only the server's service_role key bypasses RLS entirely — clients can never read or write this table directly.</p>
+  </div>
+
+  <div class="sub-head">Profiles Table + RLS</div>
+  <pre>create table if not exists profiles (
+  id            uuid primary key references auth.users(id) on delete cascade,
+  username      text,
+  email         text,
+  bio           text,
+  avatar_url    text,
+  token_balance integer default 50,  -- everyone starts with 50 free tokens
+  is_verified   boolean default false,
+  role          text default 'user' check (role in ('user','admin')),
+  created_at    timestamptz default now()
+);
+
+-- Users can update THEIR row, but CANNOT change token_balance or role
+create policy "Users can update own profile" on profiles
+  for update using (auth.uid() = id)
+  with check (
+    auth.uid() = id
+    and token_balance = (select token_balance from profiles where id = auth.uid())
+    and role          = (select role          from profiles where id = auth.uid())
+  );</pre>
+  <div class="explain">
+    <p><strong>references auth.users(id) on delete cascade:</strong> Foreign key to Supabase's auth users table. When a user deletes their account, their profile is auto-deleted too. Cascade prevents orphan rows.</p>
+    <p><strong>WITH CHECK:</strong> This is the row-level security magic. The <code>using</code> clause controls which rows can be targeted. The <code>with check</code> clause validates the NEW values being written. Even if a user targets their own row, they can't SET token_balance to something different from the current value — the subquery fetches the current balance and forces it to match. Same for role. This means the UI can call <code>supabase.from('profiles').update({ username: 'newname' })</code> safely — but <code>update({ token_balance: 9999 })</code> from the client would be rejected by RLS.</p>
+  </div>
+
+  <div class="sub-head">Auto-Create Profile Trigger</div>
+  <pre>create or replace function handle_new_user()
+returns trigger as $$
+begin
+  insert into profiles (id, email, username, token_balance)
+  values (
+    new.id,
+    new.email,
+    coalesce(new.raw_user_meta_data->>'username', split_part(new.email, '@', 1)),
+    50
+  )
+  on conflict (id) do nothing;  -- idempotent: re-running is safe
+  return new;
+end;
+$$ language plpgsql security definer;
+
+create trigger on_auth_user_created
+  after insert on auth.users
+  for each row execute function handle_new_user();</pre>
+  <div class="explain">
+    <p><strong>AFTER INSERT trigger:</strong> Fires automatically after every new row in auth.users (which Supabase creates when signUp() is called). This auto-creates the profile without any explicit server call.</p>
+    <p><strong>raw_user_meta_data:</strong> When calling <code>supabase.auth.signUp({ options: { data: { username: 'Abhay' } } })</code>, the data object is stored in <code>raw_user_meta_data</code> as JSON. The trigger extracts it with <code>-&gt;&gt;'username'</code> (JSON text extraction).</p>
+    <p><strong>COALESCE:</strong> Returns the first non-null value. If no username in metadata, fall back to the email's local part (before @).</p>
+    <p><strong>SECURITY DEFINER:</strong> The function runs with the privileges of the user who DEFINED it (superuser), not the user who triggers it. This allows the trigger to insert into profiles even from anonymous auth context.</p>
+    <p><strong>ON CONFLICT DO NOTHING:</strong> If for some reason the profile already exists (race condition, duplicate trigger), the insert is silently skipped rather than throwing an error.</p>
+  </div>
+
+  <div class="sub-head">credit_purchase — Idempotent Token Purchase</div>
+  <pre>create or replace function credit_purchase(
+  p_user_id uuid, p_tokens integer, p_inr text, p_payment_id text
+) returns integer as $$
+declare v_balance integer;
+begin
+  -- Guard: if this payment was already processed, return current balance
+  if exists (select 1 from purchases where payment_id = p_payment_id) then
+    select token_balance into v_balance from profiles where id = p_user_id;
+    return v_balance;
+  end if;
+
+  insert into purchases (user_id, payment_id, tokens, inr) values (p_user_id, p_payment_id, p_tokens, p_inr);
+  update profiles set token_balance = token_balance + p_tokens where id = p_user_id returning token_balance into v_balance;
+  insert into token_transactions (user_id, type, amount, reason) values (p_user_id, 'earn', p_tokens, 'Token purchase: ₹' || coalesce(p_inr, ''));
+  return v_balance;
+end;
+$$ language plpgsql security definer;</pre>
+  <div class="explain">
+    <p><strong>Idempotency:</strong> The purchases table has a UNIQUE constraint on payment_id. If the same payment_id arrives twice (network retry, double-click), the EXISTS check returns true and we return the current balance without crediting again. This prevents double-crediting even if the payment verify endpoint is called multiple times.</p>
+    <p><strong>RETURNING:</strong> <code>UPDATE ... RETURNING token_balance INTO v_balance</code> gets the NEW balance in a single SQL statement — no second SELECT needed.</p>
+    <p><strong>3 operations in one function:</strong> Insert into purchases, update profile balance, insert transaction log — all in one atomic function. If any step fails, Postgres rolls back all of them.</p>
+  </div>
+
+  <div class="sub-head">request_withdrawal — Atomic Token Deduction</div>
+  <pre>create or replace function request_withdrawal(p_tokens integer, p_method text, p_inr numeric, ...) returns void as $$
+declare v_user uuid := auth.uid(); v_bal integer;
+begin
+  if v_user is null then raise exception 'Not authenticated'; end if;
+  select token_balance into v_bal from profiles where id = v_user;
+  if v_bal &lt; p_tokens then raise exception 'Insufficient token balance'; end if;
+  if p_tokens &lt; 625 then raise exception 'Minimum withdrawal is 625 tokens'; end if;
+
+  update profiles set token_balance = token_balance - p_tokens where id = v_user;
+  insert into withdrawal_requests (user_id, tokens_amount, ...) values (v_user, p_tokens, ...);
+  insert into token_transactions (user_id, type, amount, reason) values (v_user, 'spend', p_tokens, '...');
+end;
+$$ language plpgsql security definer;</pre>
+  <div class="explain">
+    <p><strong>auth.uid():</strong> Built-in Supabase/PostgREST function that returns the authenticated user's UUID from the JWT in the request headers. This is how the function knows who is calling it even without receiving user_id as a parameter.</p>
+    <p><strong>Balance check before deduction:</strong> Read balance → validate → deduct. Because this entire function runs in a transaction, no concurrent withdrawal can drain the balance between the check and the update. Postgres row-level locking handles this.</p>
+    <p><strong>RAISE EXCEPTION:</strong> If balance is insufficient, raises a Postgres exception which aborts the transaction and returns an error to the client. The calling code in Wallet.jsx catches this error.</p>
+  </div>
+
+  <div class="sub-head">rate_content — Anti-Self-Rating</div>
+  <pre>create or replace function rate_content(p_content_id uuid, p_stars integer) returns void as $$
+declare v_user uuid := auth.uid(); v_already boolean; v_creator uuid;
+begin
+  select creator_id into v_creator from content where id = p_content_id;
+  select exists (select 1 from ratings where user_id = v_user and content_id = p_content_id) into v_already;
+  insert into ratings (user_id, content_id, stars) values (v_user, p_content_id, p_stars)
+    on conflict (user_id, content_id) do update set stars = excluded.stars;
+  if not v_already and v_creator &lt;&gt; v_user then
+    update profiles set token_balance = token_balance + 2 where id = v_user;
+    insert into token_transactions (user_id, type, amount, reason, ref_id) values (v_user, 'earn', 2, 'Rated content', p_content_id);
+  end if;
+end;
+$$ language plpgsql security definer;</pre>
+  <div class="explain">
+    <p><strong>Two conditions for token award:</strong> <code>not v_already</code> (first time rating this content) AND <code>v_creator &lt;&gt; v_user</code> (not rating your own content). Both must be true. Self-rating earns 0 tokens to prevent gaming the system.</p>
+    <p><strong>ON CONFLICT DO UPDATE:</strong> The ratings table has UNIQUE(user_id, content_id). On re-rating, instead of failing, we UPDATE the existing rating's stars. This upsert allows changing ratings while preventing duplicates.</p>
+    <p><strong>excluded.stars:</strong> In PostgreSQL's ON CONFLICT DO UPDATE, <code>excluded</code> refers to the row that was rejected due to conflict — i.e., the new values being inserted. So <code>excluded.stars</code> = the new star rating.</p>
+  </div>
+
+  <div class="sub-head">pgvector — Semantic Search Setup</div>
+  <pre>create extension if not exists vector;
+
+create table if not exists content_chunks (
+  id          bigserial primary key,
+  content_id  uuid references content(id) on delete cascade,
+  chunk_index int  not null,
+  chunk_text  text not null,
+  embedding   vector(768),  -- 768-dimensional float array
+  created_at  timestamptz default now()
+);
+
+-- Approximate-nearest-neighbour index
+create index if not exists content_chunks_embedding_idx
+  on content_chunks using ivfflat (embedding vector_cosine_ops) with (lists = 100);
+
+-- Semantic search function
+create or replace function match_content_chunks(
+  p_content_id uuid, query_embedding vector(768), match_count int default 6
+) returns table (chunk_text text, chunk_index int, similarity float)
+language sql stable as $$
+  select chunk_text, chunk_index,
+         1 - (embedding &lt;=&gt; query_embedding) as similarity
+  from content_chunks
+  where content_id = p_content_id
+  order by embedding &lt;=&gt; query_embedding
+  limit match_count;
+$$;</pre>
+  <div class="explain">
+    <p><strong>vector(768):</strong> A Postgres column that stores 768 floating-point numbers. This is the embedding — a mathematical representation of text in 768-dimensional space. Semantically similar texts have embeddings that are "close" to each other in this space.</p>
+    <p><strong>ivfflat index:</strong> Inverted File with Flat quantization. An Approximate Nearest Neighbour (ANN) algorithm. Instead of comparing the query vector against every embedding (which would be O(n)), it divides vectors into 100 clusters (lists=100). At query time, only vectors in nearby clusters are searched — much faster with some accuracy trade-off.</p>
+    <p><strong>&lt;=&gt; operator:</strong> pgvector's cosine distance operator. Returns a value from 0 (identical) to 2 (opposite). We convert to similarity with <code>1 - distance</code> so higher = more relevant.</p>
+    <p><strong>ORDER BY embedding &lt;=&gt; query_embedding:</strong> Sort by distance (ascending). The most relevant chunks come first. LIMIT 6 takes the top 6 most relevant passages.</p>
+    <p><strong>STABLE:</strong> Tells Postgres this function doesn't modify the database and returns the same result for the same inputs within a single transaction. Allows query optimization.</p>
+  </div>
+</div>
+
+<!-- Q&A -->
+<div class="section" id="qa">
+  <div class="section-header">
+    <div class="file-tag">Interview Prep</div>
+    <h2>Top 30 Interview Q&amp;As</h2>
+    <div class="type-badge">Part 2 Coverage</div>
+  </div>
+
+  <div class="qa-card">
+    <div class="q">Why does Register.jsx have a 2-step OTP flow instead of just using Supabase's built-in email verification?</div>
+    <div class="a">We wanted a custom-branded verification email with our own template and design sent through SendGrid. Supabase's built-in email sends its own plain template. So we build a custom OTP system: generate a 6-digit code server-side, store it in our <code>email_verification_codes</code> table, send via SendGrid, then verify it before calling <code>supabase.auth.signUp()</code>. Supabase email confirmation is disabled in the dashboard to allow immediate login after signUp.</div>
+  </div>
+
+  <div class="qa-card">
+    <div class="q">How does the Navbar know whether to show "Login/Signup" or the user menu?</div>
+    <div class="a">It reads from the Zustand <code>useAuthStore</code>: <code>const { user, profile } = useAuthStore()</code>. On login, <code>setUser(data.user)</code> is called in Login.jsx which updates the store. Since the Navbar is subscribed to this store, it re-renders automatically showing the user avatar and token balance. No prop drilling or Context is needed — Zustand's global store handles this.</div>
+  </div>
+
+  <div class="qa-card">
+    <div class="q">What is the purpose of the barrel export in <code>components/common/index.js</code>?</div>
+    <div class="a">It's a single entry point that re-exports all components. Instead of 5 separate import lines for Button, Input, Badge, Modal, Skeleton, you write one: <code>import { Button, Input, Badge, Modal, Skeleton } from '../components/common'</code>. When you rename or move a component, you only update the barrel — all files that import from common still work. It's a module organization pattern.</div>
+  </div>
+
+  <div class="qa-card">
+    <div class="q">Why does Modal.jsx lock body scroll when open?</div>
+    <div class="a"><code>document.body.style.overflow = 'hidden'</code> prevents the background page from scrolling while the modal is open. Without this, scrolling inside the modal can accidentally scroll the page behind it on some browsers. The useEffect cleanup restores overflow to empty string when the modal closes, and the event listener for Escape key is also cleaned up to prevent memory leaks.</div>
+  </div>
+
+  <div class="qa-card">
+    <div class="q">How does the Leaderboard calculate rankings? Why not just ORDER BY token_balance in Supabase?</div>
+    <div class="a">The leaderboard ranks by tokens EARNED in a period (week/month/all), not by current balance. A user who earned 1000 tokens and spent 900 should still rank higher than someone with 200 tokens who never spent. Ordering by <code>token_balance</code> would rank the second person higher. So we query <code>token_transactions</code> filtered by <code>type = 'earn'</code> and sum amounts per user, then sort that.</div>
+  </div>
+
+  <div class="qa-card">
+    <div class="q">What does <code>SECURITY DEFINER</code> mean in the SQL functions?</div>
+    <div class="a">It means the function runs with the privileges of the function's CREATOR (usually superuser), not the user who CALLS it. This is needed for <code>credit_purchase</code> and <code>rate_content</code> because they update <code>token_balance</code> in profiles — which regular users can't do (blocked by RLS). The function is allowed to do it on their behalf. It's like a "trusted intermediary" that has elevated permissions for specific controlled operations.</div>
+  </div>
+
+  <div class="qa-card">
+    <div class="q">Explain the double-refund protection in AdminPanel.jsx when rejecting a withdrawal.</div>
+    <div class="a">Two admins might click Reject simultaneously. The protection is the SQL clause <code>.eq('status', 'pending')</code> in the UPDATE query. This adds <code>WHERE status = 'pending'</code> to the SQL. If Admin A's UPDATE runs first and changes status to 'rejected', Admin B's UPDATE finds no rows matching <code>status = 'pending'</code> and updates 0 rows. The <code>.select()</code> returns empty, so <code>!updated?.length</code> is true and Admin B sees an error "already processed". Only the first admin's rejection goes through and triggers the refund.</div>
+  </div>
+
+  <div class="qa-card">
+    <div class="q">What's the difference between <code>.single()</code> and <code>.maybeSingle()</code> in Supabase queries?</div>
+    <div class="a"><code>.single()</code> expects exactly one row. If 0 rows are found, it throws a PostgREST 406 error. <code>.maybeSingle()</code> returns null if no row is found, without throwing an error. For queries where the row might not exist (e.g., fetching a bookmark that might not be set), use <code>maybeSingle()</code>. For cases where the row MUST exist (e.g., fetching a profile after confirmed signup), either works but error handling differs.</div>
+  </div>
+
+  <div class="qa-card">
+    <div class="q">How does the Avatar component generate initials from a name?</div>
+    <div class="a"><code>name.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase()</code> — splits by space, takes first character of each word, joins them, takes max 2 characters, uppercases. "Abhay Kumar" → ["A", "K"] → "AK". Single name "Abhay" → ["A"] → "A". Empty string → "" → displays "?" as fallback.</div>
+  </div>
+
+  <div class="qa-card">
+    <div class="q">Why does Browse.jsx have two separate useEffects instead of one?</div>
+    <div class="a">They have different dependencies and timing. The first effect (<code>[]</code> deps) loads subjects ONCE on mount. The second effect (<code>[selectedSubject]</code> deps) loads content every time the selected subject changes. If they were in one effect, changing subject would also attempt to re-load subjects (unnecessary). Separate effects = separate responsibilities.</div>
+  </div>
+
+  <div class="qa-card">
+    <div class="q">What is <code>createRoot</code> in main.jsx and why is it different from the old <code>ReactDOM.render</code>?</div>
+    <div class="a"><code>createRoot</code> is React 18's new API that enables Concurrent Mode features: automatic batching (multiple setState calls batch into one render), startTransition (mark slow updates as non-urgent), Suspense for data fetching, and streaming server-side rendering. The old <code>ReactDOM.render</code> used legacy synchronous rendering. <code>createRoot</code> makes rendering interruptible and prioritizable.</div>
+  </div>
+
+  <div class="qa-card">
+    <div class="q">How does the Resend Countdown work in Register.jsx?</div>
+    <div class="a">After sending the OTP, <code>setResendIn(30)</code> is called. A useEffect watches <code>resendIn</code>: when it's &gt; 0, it starts <code>setInterval(() =&gt; setResendIn(s =&gt; s - 1), 1000)</code> — decrementing every second. When it hits 0, the effect re-runs but the <code>if (resendIn &lt;= 0) return</code> guard exits immediately, stopping the interval. The cleanup function <code>return () =&gt; clearInterval(t)</code> runs before each re-execution to clear the old interval.</div>
+  </div>
+
+  <div class="qa-card">
+    <div class="q">Why does Navbar have a transparent full-screen div when the user dropdown is open?</div>
+    <div class="a">It's a click-outside-to-close pattern. When the dropdown opens, a <code>&lt;div className="fixed inset-0 z-10"&gt;</code> is placed behind the dropdown (z-10) but above everything else. Clicking anywhere outside the dropdown clicks this invisible overlay, triggering <code>setUserMenuOpen(false)</code>. It's simpler than attaching and managing a click listener on <code>document</code> body and checking if the click target is inside the dropdown.</div>
+  </div>
+
+  <div class="qa-card">
+    <div class="q">How does the auth route (<code>/api/auth/send-verification</code>) work without <code>verifyToken</code> middleware?</div>
+    <div class="a">During registration, the user has no JWT yet — they haven't logged in. Requiring a token on the registration endpoint would make it impossible to register. Public routes (auth, health check) have no middleware. Protected routes (AI, payment) add <code>verifyToken</code> as a middleware argument. Express calls middleware left to right: if verifyToken rejects, the handler never runs.</div>
+  </div>
+
+  <div class="qa-card">
+    <div class="q">How does Profile.jsx update the Navbar's username display immediately without a page refresh?</div>
+    <div class="a">After saving, <code>setProfile(data)</code> is called with the fresh server response. This updates the Zustand <code>authStore</code>. Both Profile.jsx and Navbar.jsx subscribe to the same Zustand store — they both call <code>useAuthStore()</code>. When the store changes, React re-renders all components that called the hook. So the Navbar automatically re-renders with the new username.</div>
+  </div>
+
+  <div class="qa-card">
+    <div class="q">What is the <code>&lt;=&gt;</code> operator in the SQL and how does cosine distance work?</div>
+    <div class="a"><code>&lt;=&gt;</code> is pgvector's cosine distance operator. Cosine distance measures the angle between two vectors — 0 means identical direction (same meaning), 2 means opposite. For semantic search, we want the smallest distance (most similar meaning). <code>ORDER BY embedding &lt;=&gt; query_embedding</code> sorts by smallest distance first. We convert to similarity: <code>1 - distance</code> gives a value from -1 to 1 where 1 = perfect match.</div>
+  </div>
+
+  <div class="qa-card">
+    <div class="q">Why is IVFFlat used instead of a plain index for vector search?</div>
+    <div class="a">Without an index, finding the nearest vector requires comparing against every row — O(n) for n chunks. With IVFFlat (lists=100), vectors are clustered into 100 groups during indexing. At query time, only vectors in nearby clusters are searched — much faster (roughly O(n/100)). The trade-off is approximate results: a tiny fraction of truly nearest vectors might be in a skipped cluster. For semantic search in education, this approximation is acceptable.</div>
+  </div>
+
+  <div class="qa-card">
+    <div class="q">How do the three CreatorDashboard queries run faster by not awaiting each other?</div>
+    <div class="a">In Profile.jsx useEffect, three Supabase calls are made with <code>.then()</code> instead of <code>await</code> in sequence. In JavaScript, <code>.then()</code> is non-blocking — all three HTTP requests are fired simultaneously. They run in parallel and each updates state independently when done. Total time = slowest query (say 200ms) not sum of all (say 600ms). This is implicit Promise.all behavior without the explicit syntax.</div>
+  </div>
+
+  <div class="qa-card">
+    <div class="q">What does <code>on delete cascade</code> mean on the profiles table's foreign key?</div>
+    <div class="a">When the referenced row in <code>auth.users</code> is deleted (user deletes their account), PostgreSQL automatically deletes the matching profile row. Without cascade, deleting from auth.users would fail because the profiles row references it (foreign key constraint violation). Cascade makes deletion propagate to child tables, keeping the database consistent without manual cleanup code.</div>
+  </div>
+
+  <div class="qa-card">
+    <div class="q">Why does handleLogout call both <code>supabase.auth.signOut()</code> AND <code>logout()</code> from the store?</div>
+    <div class="a"><code>supabase.auth.signOut()</code> invalidates the session on Supabase's server and removes the access token from localStorage. <code>logout()</code> clears the Zustand store (user=null, profile=null), which triggers re-renders of all subscribed components (Navbar, ProtectedRoute, etc.) to reflect the logged-out state. Without the Supabase call, the token persists in localStorage and the user would auto-login on next page load. Without the store call, the UI would still show the user as logged in.</div>
+  </div>
+
+  <div class="qa-card">
+    <div class="q">What is StrictMode and does it cause any issues in production?</div>
+    <div class="a">StrictMode is a development-only wrapper. In development it: (1) double-invokes render functions to detect side effects in render, (2) double-invokes useEffect setup/cleanup to detect incomplete cleanup, (3) warns about deprecated React APIs. You might notice effects running twice during development — this is intentional and expected. In production builds, StrictMode is a no-op — it adds zero overhead and causes no double renders.</div>
+  </div>
+
+  <div class="qa-card">
+    <div class="q">How does the Skeleton component make multiple text lines of different widths?</div>
+    <div class="a"><code>Array.from({ length: rows })</code> creates an array of N empty slots to map over. Each renders a skeleton div. The last line (<code>i === rows - 1</code>) gets <code>w-3/4</code> (75% width) while all others get <code>w-full</code>. Real text paragraphs rarely end on a full-width line — this mimics natural text proportions, making the skeleton look more realistic than all-equal-width bars.</div>
+  </div>
+
+  <div class="qa-card">
+    <div class="q">How does the loading spinner in Button.jsx work without a separate image or SVG?</div>
+    <div class="a">It's a pure CSS trick: a small div (<code>w-4 h-4</code>) with a circular shape (<code>rounded-full</code>), a 2px border, but only the TOP border colored (<code>border-t-transparent</code> makes the others transparent). With <code>animate-spin</code> rotating it 360°, the single visible border segment appears to spin. No images, no external libraries — just a rotating circle with one colored side.</div>
+  </div>
+
+  <div class="qa-card">
+    <div class="q">What is the <code>...props</code> spread in Button and Input components?</div>
+    <div class="a">Rest props (<code>...props</code>) collect any extra HTML attributes not explicitly destructured. Spreading them onto the native element (<code>&lt;button {...props}&gt;</code>) forwards them automatically. This means <code>&lt;Button type="submit" onClick={fn} aria-label="Save"&gt;</code> works without Button needing to know about these attributes. It's how custom components can be used with full HTML attribute support.</div>
+  </div>
+
+  <div class="qa-card">
+    <div class="q">How does the password reset flow work end-to-end?</div>
+    <div class="a">(1) User enters email and clicks "Forgot password?" in Login.jsx. (2) <code>supabase.auth.resetPasswordForEmail(email, { redirectTo: window.location.origin + '/login' })</code> sends a Supabase magic link email. (3) User clicks the link → Supabase redirects to <code>/login#type=recovery&amp;access_token=...</code>. (4) Login.jsx mounts, checks <code>window.location.hash</code>, finds <code>type=recovery</code>, sets <code>resetMode=true</code>. (5) User enters new password. (6) <code>supabase.auth.updateUser({ password: newPassword })</code> uses the token from the URL hash to authenticate and update.</div>
+  </div>
+
+  <div class="qa-card">
+    <div class="q">Why does the admin rejection flow mark the status FIRST and THEN call the refund RPC?</div>
+    <div class="a">Safest order for preventing double-refunds. If we refunded first and the status update failed (network error), the user's tokens are returned but the request is still "pending" — admin could trigger another refund. By marking rejected first (with <code>.eq('status', 'pending')</code> guard), even if the refund RPC fails afterward, the request is in 'rejected' state and can't be refunded again. The failure surfaces as an error toast: "Marked rejected, but refund failed — refund manually."</div>
+  </div>
+
+  <div class="qa-card">
+    <div class="q">Why are all three AI routes (<code>/assist, /exam, /ingest</code>) POST methods instead of GET?</div>
+    <div class="a">GET requests have no body — all parameters go in the URL. AI requests need to send large data: content text, user questions, content IDs. Putting these in URL params is messy, length-limited, and gets cached/logged by proxies. POST with JSON body is the right choice for sending data that triggers server-side processing. Also, these endpoints mutate state (ai_logs, content_chunks tables) which aligns with POST semantics.</div>
+  </div>
+
+  <div class="qa-card">
+    <div class="q">How does the CreatorDashboard filter content to only show the logged-in user's uploads?</div>
+    <div class="a"><code>supabase.from('content').select('*').eq('creator_id', user.id)</code> — the <code>.eq('creator_id', user.id)</code> adds a <code>WHERE creator_id = user.id</code> clause to the SQL. Additionally, Supabase RLS policies can be configured so even without this filter, users can only read their own content. The frontend filter is a UI concern (show only your content in dashboard); RLS is the security layer (block unauthorized access even via API).</div>
+  </div>
+
+  <div class="qa-card">
+    <div class="q">What does the <code>data-driven navLinks array</code> pattern in Navbar.jsx demonstrate about clean code?</div>
+    <div class="a">Separation of data from presentation. The nav items are defined as data (array of objects with to, label, icon). The rendering logic is separate (<code>.map()</code> producing JSX). Adding a new nav item requires adding one object to the array — zero changes to JSX. This is the same principle behind React's component model: describe what, not how. Compare to hardcoding 4 separate Link elements where adding a 5th requires duplicating JSX.</div>
+  </div>
+
+  <div class="qa-card">
+    <div class="q">How does EmptyState.jsx accept and render a button/link through the <code>action</code> prop?</div>
+    <div class="a">In React, JSX is just JavaScript — you can pass JSX as prop values. The caller does: <code>&lt;EmptyState action={&lt;Button onClick={...}&gt;Upload&lt;/Button&gt;}&gt;</code>. Inside EmptyState, <code>{action &amp;&amp; &lt;div className="mt-4"&gt;{action}&lt;/div&gt;}</code> renders that JSX in the correct position. This is the "slot" or "render prop" pattern — the component controls layout, the caller controls the action content. EmptyState doesn't need to know anything about buttons.</div>
+  </div>
+
+  <div class="qa-card">
+    <div class="q">Explain the complete flow when a user clicks "Rate 4 stars" on a content page.</div>
+    <div class="a">(1) ContentPage.jsx calls <code>supabase.rpc('rate_content', { p_content_id: id, p_stars: 4 })</code>. (2) The <code>rate_content</code> Postgres function runs server-side: gets creator_id of the content, checks if user already rated this content, upserts (insert or update) the rating in the ratings table. (3) If this was the FIRST rating AND the rater is NOT the creator: updates profile token_balance +2, inserts a token_transaction record. (4) Returns to frontend. (5) ContentPage re-fetches the profile to show updated balance. (6) Toast shows "+2 tokens earned!" or just "Rated 4 stars" based on <code>awardsTokens</code>.</div>
+  </div>
+</div>
+
+<div class="section" style="background: linear-gradient(135deg, #f3e8ff 0%, #e9d5ff 100%); text-align:center; padding: 50px;">
+  <div style="font-size:28px; margin-bottom:8px;">🎓</div>
+  <h2 style="font-size:20px; color:#6b21a8; margin-bottom:8px;">You now know BrainBarter inside-out</h2>
+  <p style="color:#4b0082; max-width:500px; margin:0 auto; font-size:13px; line-height:1.7;">Part 1 covered the server layer (controllers, middleware, utils, stores, routing). Part 2 covered the UI layer (pages, components, SQL). Together these documents explain every file, every function, and every design decision in the project. You can now walk any interviewer through the entire codebase with confidence.</p>
+  <div style="margin-top:24px; color:#9d4edd; font-size:12px;">— Abhay Kumar Dwivedi | BrainBarter Project</div>
+</div>
+
+</body>
+</html>
