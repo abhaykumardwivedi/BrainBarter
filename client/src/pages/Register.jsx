@@ -102,7 +102,7 @@ export default function Register() {
 
       setUser(loginData.user)
       const { data: profile } = await supabase
-        .from('profiles').select('*').eq('id', loginData.user.id).single()
+        .from('profiles').select('*').eq('id', loginData.user.id).maybeSingle()
       setProfile(profile)
 
       toast.success(`Welcome to BrainBarter, ${profile?.username || form.username}! 🎉`)

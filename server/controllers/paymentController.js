@@ -60,7 +60,7 @@ async function verifyPayment(req, res) {
     }
 
     const tokens = parseInt(order.notes?.tokens, 10)
-    const inr = order.notes?.inr || ''
+    const inr = parseFloat(order.notes?.inr || 0)
 
     // RPC handles balance update + transaction record atomically; idempotent on payment_id
     const { data: balance, error } = await supabase.rpc('credit_purchase', {
