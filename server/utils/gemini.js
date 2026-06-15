@@ -1,6 +1,7 @@
 const { GoogleGenerativeAI } = require('@google/generative-ai')
 
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY)
+// Use v1 (stable) instead of v1beta to access all current models
+const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY, { apiVersion: 'v1' })
 
 const systemPrompts = {
   summarize:          'You are an academic assistant. Summarize the following content in 5-7 clear bullet points for a student.',
@@ -12,10 +13,11 @@ const systemPrompts = {
   'revision-sheet':   'You are an academic assistant. Create a one-page revision sheet with the most important concepts, definitions, and formulas from the following content.',
   'expected-questions':'You are an academic assistant. Based on the previous year questions and topic context provided, generate a list of probable exam questions a student should prepare.',
   'final-prep':       'You are an academic assistant. Create a final exam preparation checklist with the most important topics, key concepts, and must-revise points.',
+  'study-plan':       'You are an academic assistant. Create a detailed day-by-day study plan based on the subject and number of days provided.',
 }
 
 async function callGemini(taskType, contentText, userMessage = '') {
-  const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash-8b' })
+  const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' })
   const systemPrompt = systemPrompts[taskType] || systemPrompts.summarize
   const prompt = `${systemPrompt}\n\nContent:\n${contentText}${userMessage ? `\n\nStudent's question: ${userMessage}` : ''}`
   const result = await model.generateContent(prompt)
