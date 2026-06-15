@@ -7,7 +7,7 @@ const paymentRoutes = require('./routes/payment')
 
 const app = express()
 
-app.use(cors({ 
+app.use(cors({
   origin: (origin, callback) => {
     const allowedOrigins = [
       process.env.CLIENT_URL,

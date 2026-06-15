@@ -82,6 +82,7 @@ export default function Wallet() {
 
       // 1. Ask the server to create an order — the token amount is locked in server-side
       const { data: { session } } = await supabase.auth.getSession()
+      if (!session) { toast.error('Session expired, please login again'); setProcessing(false); return }
       const orderRes = await fetch(`${import.meta.env.VITE_API_URL}/api/payment/create-order`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session.access_token}` },
@@ -278,7 +279,7 @@ export default function Wallet() {
           ) : (
             <div className="space-y-1">
               {transactions.map(t => {
-                const { icon: Icon, color, bg } = iconMap[t.type]
+                const { icon: Icon, color, bg } = iconMap[t.type] || iconMap.earn
                 return (
                   <div key={t.id} className="flex items-center gap-3 p-3 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors">
                     <div className={`w-9 h-9 rounded-xl ${bg} flex items-center justify-center shrink-0`}>
