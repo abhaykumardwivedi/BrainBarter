@@ -65,7 +65,7 @@ async function verifyPayment(req, res) {
     }
 
     const tokens = parseInt(order.notes?.tokens, 10)
-    const inr = order.notes?.inr || ''
+    const inr = parseFloat(order.notes?.inr || 0)
 
     // 3. Credit atomically + idempotently (RPC ignores a repeated payment id)
     const { data: balance, error } = await supabase.rpc('credit_purchase', {

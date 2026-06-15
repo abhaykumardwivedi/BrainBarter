@@ -3,8 +3,9 @@ import useAuthStore from '../../store/authStore'
 import { PageLoader } from './Loader'
 
 export default function ProtectedRoute({ children, adminOnly = false }) {
-  const { user, profile } = useAuthStore()
+  const { user, profile, loading } = useAuthStore()
   const location = useLocation()
+  if (loading) return <PageLoader />
   if (!user) return <Navigate to="/login" state={{ from: location }} replace />
   if (adminOnly) {
     // Profile may still be loading right after a refresh — wait before deciding

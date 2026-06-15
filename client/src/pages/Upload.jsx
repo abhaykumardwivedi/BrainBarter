@@ -53,7 +53,7 @@ export default function Upload() {
   const handleFile = e => {
     const f = e.target.files[0]
     if (!f) return
-    if (f.size > maxSize * 1024 * 1024) { alert(`Max file size is ${maxSize}MB`); return }
+    if (f.size > maxSize * 1024 * 1024) { toast.error(`Max file size is ${maxSize}MB`); return }
     setFile(f)
   }
 
@@ -96,9 +96,13 @@ export default function Upload() {
       if (thumb) {
         const thumbExt = thumb.name.split('.').pop()
         const thumbName = `${user.id}/thumb_${Date.now()}.${thumbExt}`
-        const { data: thumbData } = await supabase.storage
+        const { data: thumbData, error: thumbError } = await supabase.storage
           .from('content')
           .upload(thumbName, thumb, { cacheControl: '3600', upsert: false })
+        if (thumbError) {
+          console.error('Thumbnail upload failed:', thumbError)
+          toast.error('Thumbnail upload failed, continuing without thumbnail')
+        }
         if (thumbData) {
           thumbnailUrl = supabase.storage.from('content').getPublicUrl(thumbName).data.publicUrl
         }
@@ -134,7 +138,14 @@ export default function Upload() {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session?.access_token}` },
             body: JSON.stringify({ contentId: inserted.id }),
-          }).catch(() => {})
+          }).then(async (res) => {
+            if (!res.ok) {
+              const err = await res.json().catch(() => ({}))
+              console.error('Ingest failed:', err)
+            }
+          }).catch((err) => {
+            console.error('Ingest request error:', err)
+          })
         })
       }
 
