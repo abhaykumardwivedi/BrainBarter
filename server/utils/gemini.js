@@ -1,7 +1,11 @@
 const { GoogleGenerativeAI } = require('@google/generative-ai')
 
-// Use v1 (stable) instead of v1beta to access all current models
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY, { apiVersion: 'v1' })
+const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY)
+
+// Model + API version are configurable via env so they can be changed on Render
+// without a code deploy. Defaults are the current stable values.
+const CHAT_MODEL  = process.env.GEMINI_MODEL || 'gemini-2.0-flash'
+const API_VERSION = process.env.GEMINI_API_VERSION || 'v1beta'
 
 const systemPrompts = {
   summarize:          'You are an academic assistant. Summarize the following content in 5-7 clear bullet points for a student.',
@@ -17,7 +21,11 @@ const systemPrompts = {
 }
 
 async function callGemini(taskType, contentText, userMessage = '') {
-  const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' })
+  // apiVersion MUST go in the 2nd arg (RequestOptions) — the constructor ignores it
+  const model = genAI.getGenerativeModel(
+    { model: CHAT_MODEL },
+    { apiVersion: API_VERSION }
+  )
   const systemPrompt = systemPrompts[taskType] || systemPrompts.summarize
   const prompt = `${systemPrompt}\n\nContent:\n${contentText}${userMessage ? `\n\nStudent's question: ${userMessage}` : ''}`
   const result = await model.generateContent(prompt)
