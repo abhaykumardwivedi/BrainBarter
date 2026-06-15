@@ -23,6 +23,7 @@ async function embedBatch(texts) {
 // Split long text into overlapping word-windows so each chunk is small enough
 // to embed and retrieve precisely. ~220 words/chunk with 40-word overlap.
 function chunkText(text, size = 220, overlap = 40) {
+  if (overlap >= size) throw new Error('Chunk overlap must be less than chunk size')
   const words = text.replace(/\s+/g, ' ').trim().split(' ')
   if (words.length === 0) return []
   const chunks = []
