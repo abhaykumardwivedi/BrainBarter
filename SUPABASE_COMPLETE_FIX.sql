@@ -32,16 +32,23 @@ alter table subjects enable row level security;
 drop policy if exists "Anyone can read subjects" on subjects;
 create policy "Anyone can read subjects" on subjects for select using (true);
 
+-- Add code column if it exists in your schema (NOT NULL with default)
+do $$ begin
+  begin alter table subjects add column code text; exception when duplicate_column then null; end;
+end $$;
+-- Make code nullable so seed inserts work even if column exists as NOT NULL
+alter table subjects alter column code drop not null;
+
 -- Seed common subjects
-insert into subjects (name, semester) values
-  ('Mathematics', 1), ('Physics', 1), ('Chemistry', 1),
-  ('English', 1), ('Computer Science', 2), ('Data Structures', 2),
-  ('Algorithms', 3), ('Database Management', 3), ('Operating Systems', 4),
-  ('Computer Networks', 4), ('Software Engineering', 5),
-  ('Artificial Intelligence', 5), ('Machine Learning', 6),
-  ('Web Development', 6), ('System Design', 7), ('Compiler Design', 7),
-  ('Digital Electronics', 3), ('Microprocessors', 4),
-  ('Automata Theory', 5), ('Object Oriented Programming', 2)
+insert into subjects (name, semester, code) values
+  ('Mathematics', 1, 'MATH101'), ('Physics', 1, 'PHY101'), ('Chemistry', 1, 'CHEM101'),
+  ('English', 1, 'ENG101'), ('Computer Science', 2, 'CS101'), ('Data Structures', 2, 'CS201'),
+  ('Algorithms', 3, 'CS301'), ('Database Management', 3, 'CS302'), ('Operating Systems', 4, 'CS401'),
+  ('Computer Networks', 4, 'CS402'), ('Software Engineering', 5, 'CS501'),
+  ('Artificial Intelligence', 5, 'CS502'), ('Machine Learning', 6, 'CS601'),
+  ('Web Development', 6, 'CS602'), ('System Design', 7, 'CS701'), ('Compiler Design', 7, 'CS702'),
+  ('Digital Electronics', 3, 'EC301'), ('Microprocessors', 4, 'EC401'),
+  ('Automata Theory', 5, 'CS503'), ('Object Oriented Programming', 2, 'CS202')
 on conflict (name) do nothing;
 
 -- ============= UNITS (for nested progress tracking) =============
