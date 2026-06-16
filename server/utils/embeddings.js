@@ -6,13 +6,21 @@ const genAI       = new GoogleGenerativeAI(API_KEY)
 
 const EMBED_DIM = 768
 
-// Preferred embedding models (current 2026 lineup first). We only call ones
-// the key supports; the working model name is cached after the first success.
+// Preferred embedding models (current 2026 lineup first). text-embedding-004
+// has been retired (404); gemini-embedding-001 is the live model. We only call
+// ones the key supports; the working model is cached after the first success.
 const PREFERRED_EMBED = [
   process.env.GEMINI_EMBED_MODEL,  // explicit override always wins
   'gemini-embedding-001',
-  'text-embedding-004',
+  'text-embedding-004',            // legacy fallback (falls through if retired)
 ].filter(Boolean)
+
+// L2-normalize so cosine/inner-product search stays accurate. Google recommends
+// normalizing gemini-embedding-001 whenever outputDimensionality < 3072.
+function normalize(vec) {
+  const norm = Math.sqrt(vec.reduce((s, v) => s + v * v, 0))
+  return norm > 0 ? vec.map(v => v / norm) : vec
+}
 
 let _embedChain = null
 
@@ -52,8 +60,19 @@ async function embedText(text) {
         { model: modelName },
         { apiVersion: API_VERSION }
       )
-      const result = await model.embedContent(text)
-      return result.embedding.values
+      // Force EMBED_DIM (768) so vectors match the existing pgvector column.
+      const result = await model.embedContent({
+        content: { role: 'user', parts: [{ text }] },
+        outputDimensionality: EMBED_DIM,
+      })
+      const values = result.embedding.values
+      // Reject any model that ignored the requested dimension — wrong size
+      // would corrupt the index. Fall through to the next candidate.
+      if (!Array.isArray(values) || values.length !== EMBED_DIM) {
+        console.warn(`[Embed] ${modelName} returned ${values?.length} dims (need ${EMBED_DIM}), trying next…`)
+        continue
+      }
+      return normalize(values)
     } catch (err) {
       const msg = err.message || ''
       if (isRetryable(msg)) {
