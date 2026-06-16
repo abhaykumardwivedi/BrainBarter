@@ -12,12 +12,13 @@ set -u
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 FAIL=0
 
-echo "── 1/3  Server modules load ─────────────────────────────"
+echo "── 1/3  Server contract + logic tests ───────────────────"
 cd "$ROOT/server"
-SUPABASE_URL="https://x.supabase.co" SUPABASE_SERVICE_KEY="x" node -e "
-  ['./utils/gemini','./utils/embeddings','./controllers/aiController','./controllers/authController','./routes/ai','./routes/auth'].forEach(m=>require(m));
-  console.log('   ✅ all server modules load');
-" || { echo "   ❌ server module load FAILED"; FAIL=1; }
+if npm test >/tmp/bb_test.log 2>&1; then
+  echo "   ✅ contract + logic tests passed"
+else
+  echo "   ❌ server tests FAILED — see /tmp/bb_test.log"; tail -20 /tmp/bb_test.log; FAIL=1
+fi
 
 echo "── 2/3  Frontend builds ─────────────────────────────────"
 cd "$ROOT/client"
