@@ -24,13 +24,9 @@ jobs:
         working-directory: server
         run: npm ci
 
-      - name: Server modules load
+      - name: Server contract + logic tests
         working-directory: server
-        env:
-          SUPABASE_URL: https://x.supabase.co
-          SUPABASE_SERVICE_KEY: x
-        run: |
-          node -e "['./utils/gemini','./utils/embeddings','./controllers/aiController','./controllers/authController','./routes/ai','./routes/auth'].forEach(m=>require(m)); console.log('✅ server modules load')"
+        run: npm test
 
       # --- Client: install + build (catches broken imports / JSX that white-screen the app) ---
       - name: Install client deps
