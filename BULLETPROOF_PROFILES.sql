@@ -4,6 +4,16 @@
 -- username. Idempotent: safe to run multiple times.
 -- ============================================================================
 
+-- LAYER 0 — Ensure every column the app expects exists (schema can drift from
+-- the original setup script; this is the fix for "column email does not exist").
+alter table public.profiles add column if not exists email         text;
+alter table public.profiles add column if not exists username      text;
+alter table public.profiles add column if not exists bio           text;
+alter table public.profiles add column if not exists avatar_url    text;
+alter table public.profiles add column if not exists token_balance integer default 50;
+alter table public.profiles add column if not exists is_verified   boolean default false;
+alter table public.profiles add column if not exists role          text default 'user';
+
 -- LAYER 1 — Column defaults: even a bare/partial insert gets correct values,
 -- so a profile can never exist with NULL/0 tokens or no role by accident.
 alter table public.profiles alter column token_balance set default 50;
