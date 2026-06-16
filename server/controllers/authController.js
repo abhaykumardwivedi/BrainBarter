@@ -106,11 +106,12 @@ exports.createAccount = async (req, res) => {
       })
 
       // Duplicate email → treat as success-ish so the user can just log in.
-      // Supabase signals this several ways depending on version.
+      // Match the specific duplicate signals only — NOT status 422 alone,
+      // since Supabase also uses 422 for weak-password/validation errors.
       const dup =
         error.code === 'email_exists' ||
-        error.status === 422 ||
-        /already|exists|registered|duplicate/i.test(error.message || '')
+        error.code === 'user_already_exists' ||
+        /already.*(registered|exists)|already been registered|email.*exists/i.test(error.message || '')
       if (dup) {
         return res.status(409).json({ error: 'An account with this email already exists. Please log in instead.' })
       }
