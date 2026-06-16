@@ -144,7 +144,7 @@ async function assist(req, res) {
 }
 
 async function examMode(req, res) {
-  const { taskType, subjectId, topicId, subject, topic } = req.body
+  const { taskType, subjectId, topicId, subject, topic, days } = req.body
   if (!taskType) return res.status(400).json({ error: 'taskType is required' })
 
   try {
@@ -163,6 +163,11 @@ async function examMode(req, res) {
       if (subjectRow) context += `Subject: ${subjectRow.name}\n`
       const { data: pyqs } = await supabase.from('pyqs').select('text_dump').eq('subject_id', subjectId).limit(3)
       if (pyqs?.length) context += `\nPrevious Year Questions Context:\n${pyqs.map(p => p.text_dump).join('\n')}`
+    }
+    // Study Planner: the AI prompt expects the number of days — pass it through.
+    if ((taskType === 'study-plan' || taskType === 'studyplan') && days) {
+      const n = parseInt(days, 10)
+      if (Number.isFinite(n) && n > 0) context += `Number of days: ${n}\n`
     }
     if (!context) context = 'General academic content'
 
