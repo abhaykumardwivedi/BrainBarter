@@ -85,13 +85,18 @@ export default function Register() {
       })
       if (!verifyRes.ok) throw new Error('Invalid or expired code')
 
-      // Create account
-      const { error } = await supabase.auth.signUp({
-        email: form.email,
-        password: form.password,
-        options: { data: { username: form.username } },
+      // Create account via backend (service-role admin API with email_confirm:true
+      // so Supabase never tries to send its own confirmation email)
+      const createRes = await fetch(`${import.meta.env.VITE_API_URL}/api/auth/create-account`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: form.email, password: form.password, username: form.username }),
       })
-      if (error) throw error
+      // 409 = account already exists; fall through and just sign in below.
+      if (!createRes.ok && createRes.status !== 409) {
+        const body = await createRes.json().catch(() => ({}))
+        throw new Error(body.error || 'Failed to create account')
+      }
 
       // Auto login
       const { data: loginData, error: loginError } = await supabase.auth.signInWithPassword({
