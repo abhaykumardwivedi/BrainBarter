@@ -80,3 +80,47 @@ exports.verifyCode = async (req, res) => {
   await supabase.from('email_verification_codes').delete().eq('email', email)
   res.json({ success: true })
 }
+
+// Create the Supabase user from the backend using the service-role admin API
+// with email_confirm:true so Supabase never tries to send its own confirmation
+// email (which 500s when Supabase SMTP isn't configured). Email was already
+// verified by us via SendGrid before this endpoint is called.
+exports.createAccount = async (req, res) => {
+  const { email, password, username } = req.body
+  if (!email || !password || !username) {
+    return res.status(400).json({ error: 'email, password, and username are required' })
+  }
+
+  try {
+    const { data, error } = await supabase.auth.admin.createUser({
+      email,
+      password,
+      user_metadata: { username },
+      email_confirm: true,   // skip Supabase's email flow — we already verified
+    })
+
+    if (error) {
+      // Log the full error so the real cause is visible in Render logs
+      console.error('admin.createUser failed:', {
+        status: error.status, code: error.code, message: error.message,
+      })
+
+      // Duplicate email → treat as success-ish so the user can just log in.
+      // Supabase signals this several ways depending on version.
+      const dup =
+        error.code === 'email_exists' ||
+        error.status === 422 ||
+        /already|exists|registered|duplicate/i.test(error.message || '')
+      if (dup) {
+        return res.status(409).json({ error: 'An account with this email already exists. Please log in instead.' })
+      }
+      // Surface the real reason to the client instead of a generic 400
+      return res.status(400).json({ error: error.message || 'Could not create account', code: error.code })
+    }
+
+    res.json({ user: data.user })
+  } catch (err) {
+    console.error('createAccount error:', err.message)
+    res.status(500).json({ error: 'Failed to create account' })
+  }
+}
