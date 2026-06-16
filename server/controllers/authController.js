@@ -100,11 +100,22 @@ exports.createAccount = async (req, res) => {
     })
 
     if (error) {
-      // Duplicate email → friendly message
-      if (error.message?.toLowerCase().includes('already')) {
-        return res.status(409).json({ error: 'An account with this email already exists' })
+      // Log the full error so the real cause is visible in Render logs
+      console.error('admin.createUser failed:', {
+        status: error.status, code: error.code, message: error.message,
+      })
+
+      // Duplicate email → treat as success-ish so the user can just log in.
+      // Supabase signals this several ways depending on version.
+      const dup =
+        error.code === 'email_exists' ||
+        error.status === 422 ||
+        /already|exists|registered|duplicate/i.test(error.message || '')
+      if (dup) {
+        return res.status(409).json({ error: 'An account with this email already exists. Please log in instead.' })
       }
-      return res.status(400).json({ error: error.message })
+      // Surface the real reason to the client instead of a generic 400
+      return res.status(400).json({ error: error.message || 'Could not create account', code: error.code })
     }
 
     res.json({ user: data.user })

@@ -92,8 +92,9 @@ export default function Register() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email: form.email, password: form.password, username: form.username }),
       })
-      if (!createRes.ok) {
-        const body = await createRes.json()
+      // 409 = account already exists; fall through and just sign in below.
+      if (!createRes.ok && createRes.status !== 409) {
+        const body = await createRes.json().catch(() => ({}))
         throw new Error(body.error || 'Failed to create account')
       }
 
