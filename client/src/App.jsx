@@ -61,14 +61,14 @@ export default function App() {
           <Routes>
             {/* Public */}
             <Route path="/"            element={<Home />} />
-            <Route path="/browse"      element={<Browse />} />
-            <Route path="/content/:id" element={<ContentPage />} />
-            <Route path="/exam-mode"   element={<ExamMode />} />
-            <Route path="/leaderboard" element={<Leaderboard />} />
             <Route path="/login"       element={<Login />} />
             <Route path="/register"    element={<Register />} />
 
-            {/* Protected */}
+            {/* Protected — must be signed in */}
+            <Route path="/browse"      element={<ProtectedRoute><Browse /></ProtectedRoute>} />
+            <Route path="/content/:id" element={<ProtectedRoute><ContentPage /></ProtectedRoute>} />
+            <Route path="/exam-mode"   element={<ProtectedRoute><ExamMode /></ProtectedRoute>} />
+            <Route path="/leaderboard" element={<ProtectedRoute><Leaderboard /></ProtectedRoute>} />
             <Route path="/wallet"    element={<ProtectedRoute><Wallet /></ProtectedRoute>} />
             <Route path="/upload"    element={<ProtectedRoute><Upload /></ProtectedRoute>} />
             <Route path="/profile"   element={<ProtectedRoute><Profile /></ProtectedRoute>} />
