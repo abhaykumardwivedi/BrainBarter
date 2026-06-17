@@ -11,6 +11,41 @@ const supabase = createClient(
 const SENDGRID_API_KEY = process.env.SENDGRID_API_KEY
 const SENDGRID_FROM    = process.env.SENDGRID_FROM
 
+// Generates a 6-digit code, stores it (10-min expiry), and emails it via SendGrid.
+// Shared by signup verification and password reset so both use the same working
+// email path (Supabase's own SMTP isn't configured).
+async function issueCode(email, { subject, heading }) {
+  const code = (crypto.randomInt(0, 1000000)).toString().padStart(6, '0')
+  const expires = new Date(Date.now() + 10 * 60 * 1000).toISOString()
+
+  const { error: dbErr } = await supabase
+    .from('email_verification_codes')
+    .upsert({ email, code, expires_at: expires }, { onConflict: 'email' })
+  if (dbErr) throw new Error('Failed to save code')
+
+  await axios.post('https://api.sendgrid.com/v3/mail/send', {
+    personalizations: [{ to: [{ email }] }],
+    from: { email: SENDGRID_FROM, name: 'BrainBarter' },
+    subject,
+    content: [{
+      type: 'text/html',
+      value: `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+          <h2 style="color: #9d4edd;">${heading}</h2>
+          <p>Your code is:</p>
+          <h1 style="background: #f3f4f6; padding: 20px; text-align: center; letter-spacing: 8px;">${code}</h1>
+          <p style="color: #6b7280;">This code expires in 10 minutes.</p>
+        </div>
+      `
+    }]
+  }, {
+    headers: {
+      Authorization: `Bearer ${SENDGRID_API_KEY}`,
+      'Content-Type': 'application/json'
+    }
+  })
+}
+
 exports.sendVerificationCode = async (req, res) => {
   try {
     const { email } = req.body
@@ -27,42 +62,7 @@ exports.sendVerificationCode = async (req, res) => {
       return res.status(409).json({ error: 'An account with this email already exists. Please sign in instead.' })
     }
 
-    // Cryptographically secure 6-digit code
-    const code = (crypto.randomInt(0, 1000000)).toString().padStart(6, '0')
-    const expires = new Date(Date.now() + 10 * 60 * 1000).toISOString()
-
-    // Upsert into Supabase so codes survive server restarts
-    const { error: dbErr } = await supabase
-      .from('email_verification_codes')
-      .upsert({ email, code, expires_at: expires }, { onConflict: 'email' })
-
-    if (dbErr) {
-      console.error('DB write error:', dbErr)
-      return res.status(500).json({ error: 'Failed to save code' })
-    }
-
-    await axios.post('https://api.sendgrid.com/v3/mail/send', {
-      personalizations: [{ to: [{ email }] }],
-      from: { email: SENDGRID_FROM, name: 'BrainBarter' },
-      subject: 'BrainBarter - Verify Your Email',
-      content: [{
-        type: 'text/html',
-        value: `
-          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-            <h2 style="color: #9d4edd;">Verify Your Email</h2>
-            <p>Your verification code is:</p>
-            <h1 style="background: #f3f4f6; padding: 20px; text-align: center; letter-spacing: 8px;">${code}</h1>
-            <p style="color: #6b7280;">This code expires in 10 minutes.</p>
-          </div>
-        `
-      }]
-    }, {
-      headers: {
-        Authorization: `Bearer ${SENDGRID_API_KEY}`,
-        'Content-Type': 'application/json'
-      }
-    })
-
+    await issueCode(email, { subject: 'BrainBarter - Verify Your Email', heading: 'Verify Your Email' })
     res.json({ success: true })
   } catch (err) {
     console.error('Email send error:', err.response?.data || err.message)
@@ -134,5 +134,72 @@ exports.createAccount = async (req, res) => {
   } catch (err) {
     console.error('createAccount error:', err.message)
     res.status(500).json({ error: 'Failed to create account' })
+  }
+}
+
+// Password reset, step 1: email a code — but only if an account actually exists.
+exports.sendResetCode = async (req, res) => {
+  try {
+    const { email } = req.body
+    if (!email || !email.includes('@')) return res.status(400).json({ error: 'Valid email required' })
+
+    const { data: existing } = await supabase
+      .from('profiles')
+      .select('id')
+      .eq('email', email)
+      .maybeSingle()
+    if (!existing) {
+      return res.status(404).json({ error: 'No account found with this email.' })
+    }
+
+    await issueCode(email, { subject: 'BrainBarter - Reset Your Password', heading: 'Reset Your Password' })
+    res.json({ success: true })
+  } catch (err) {
+    console.error('sendResetCode error:', err.response?.data || err.message)
+    res.status(500).json({ error: 'Failed to send reset code' })
+  }
+}
+
+// Password reset, step 2: verify the code and set the new password via admin API.
+exports.resetPassword = async (req, res) => {
+  try {
+    const { email, code, password } = req.body
+    if (!email || !code || !password) {
+      return res.status(400).json({ error: 'email, code, and password are required' })
+    }
+    if (password.length < 8) return res.status(400).json({ error: 'Password must be at least 8 characters' })
+
+    // Validate the code (same single-use scheme as signup)
+    const { data: rec } = await supabase
+      .from('email_verification_codes')
+      .select('code, expires_at')
+      .eq('email', email)
+      .maybeSingle()
+    if (!rec) return res.status(400).json({ error: 'No code found. Request a new one.' })
+    if (new Date() > new Date(rec.expires_at)) {
+      await supabase.from('email_verification_codes').delete().eq('email', email)
+      return res.status(400).json({ error: 'Code expired. Request a new one.' })
+    }
+    if (rec.code !== code) return res.status(400).json({ error: 'Invalid code' })
+
+    // Find the auth user id via their profile, then update the password.
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('id')
+      .eq('email', email)
+      .maybeSingle()
+    if (!profile) return res.status(404).json({ error: 'No account found with this email.' })
+
+    const { error } = await supabase.auth.admin.updateUserById(profile.id, { password })
+    if (error) {
+      console.error('resetPassword updateUser failed:', error.message)
+      return res.status(400).json({ error: error.message || 'Could not update password' })
+    }
+
+    await supabase.from('email_verification_codes').delete().eq('email', email)
+    res.json({ success: true })
+  } catch (err) {
+    console.error('resetPassword error:', err.message)
+    res.status(500).json({ error: 'Failed to reset password' })
   }
 }
