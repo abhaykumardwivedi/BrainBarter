@@ -16,6 +16,17 @@ exports.sendVerificationCode = async (req, res) => {
     const { email } = req.body
     if (!email || !email.includes('@')) return res.status(400).json({ error: 'Valid email required' })
 
+    // Stop early if an account with this email already exists — no point emailing
+    // a code for an account they can't create. Tells them to sign in instead.
+    const { data: existing } = await supabase
+      .from('profiles')
+      .select('id')
+      .eq('email', email)
+      .maybeSingle()
+    if (existing) {
+      return res.status(409).json({ error: 'An account with this email already exists. Please sign in instead.' })
+    }
+
     // Cryptographically secure 6-digit code
     const code = (crypto.randomInt(0, 1000000)).toString().padStart(6, '0')
     const expires = new Date(Date.now() + 10 * 60 * 1000).toISOString()
