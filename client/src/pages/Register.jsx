@@ -61,6 +61,13 @@ export default function Register() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email: form.email }),
       })
+      // 409 = account already exists; send them to sign in with a clear message.
+      if (res.status === 409) {
+        toast.error('An account with this email already exists. Please sign in instead.')
+        setLoading(false)
+        navigate('/login')
+        return
+      }
       if (!res.ok) throw new Error('Failed to send verification code')
       toast.success(isResend ? 'New code sent!' : 'Verification code sent to your email!')
       setStep(2)
@@ -92,8 +99,15 @@ export default function Register() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email: form.email, password: form.password, username: form.username }),
       })
-      // 409 = account already exists; fall through and just sign in below.
-      if (!createRes.ok && createRes.status !== 409) {
+      // 409 = an account with this email already exists. Tell the user clearly
+      // and send them to sign in instead of silently creating/logging in.
+      if (createRes.status === 409) {
+        toast.error('An account with this email already exists. Please sign in instead.')
+        setLoading(false)
+        navigate('/login')
+        return
+      }
+      if (!createRes.ok) {
         const body = await createRes.json().catch(() => ({}))
         throw new Error(body.error || 'Failed to create account')
       }
