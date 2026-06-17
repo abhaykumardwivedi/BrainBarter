@@ -36,7 +36,7 @@ test('gemini exports callGemini + model discovery', () => {
 // --- Auth ---
 test('authController exports all handlers', () => {
   const c = require('../controllers/authController')
-  for (const fn of ['sendVerificationCode', 'verifyCode', 'createAccount']) {
+  for (const fn of ['sendVerificationCode', 'verifyCode', 'createAccount', 'sendResetCode', 'resetPassword']) {
     assert.strictEqual(typeof c[fn], 'function', `authController.${fn} must be a function`)
   }
 })

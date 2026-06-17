@@ -95,10 +95,11 @@ export default function AdminPanel() {
     if (!request) return
 
     if (action === 'approve') {
+      if (request.status !== 'pending') return toast.error('This request was already processed')
       const txId = prompt('Enter transaction/reference ID:')
       if (!txId) return
 
-      const { error } = await supabase
+      const { data: updated, error } = await supabase
         .from('withdrawal_requests')
         .update({
           status: 'approved',
@@ -107,10 +108,14 @@ export default function AdminPanel() {
           processed_at: new Date().toISOString(),
         })
         .eq('id', id)
+        .eq('status', 'pending')
+        .select()
 
-      if (!error) {
+      if (!error && updated?.length) {
         toast.success('Withdrawal approved!')
         loadWithdrawals()
+      } else {
+        toast.error('Could not approve — it may already be processed')
       }
     } else if (action === 'reject') {
       // Guard against double-refund: only act on still-pending requests
@@ -137,8 +142,7 @@ export default function AdminPanel() {
       // Now refund tokens; if this fails, surface it so it can be retried manually
       const { error: refundError } = await supabase.rpc('refund_tokens', {
         p_user_id: request.user_id,
-        p_amount: request.tokens_amount,
-        p_reason: `Withdrawal rejected: ${reason}`,
+        p_tokens: request.tokens_amount,
       })
       if (refundError) {
         toast.error('Marked rejected, but refund failed — refund manually')

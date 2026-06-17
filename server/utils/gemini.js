@@ -68,12 +68,15 @@ const systemPrompts = {
   'study-plan':        'You are an academic assistant. Create a detailed day-by-day study plan based on the subject and number of days provided.',
 }
 
-// Retry on errors that mean "this model won't work, try another" — quota
-// exhaustion (429) or model-not-found/unsupported (404).
+// Retry on errors that mean "this model won't work right now, try another" —
+// quota exhaustion (429), model-not-found/unsupported (404), or a transient
+// overload (503 / UNAVAILABLE / overloaded), which a different model may dodge.
 function isRetryable(msg) {
   return msg.includes('429') || msg.includes('quota') || msg.includes('RESOURCE_EXHAUSTED') ||
          msg.includes('limit: 0') || msg.includes('404') || msg.includes('not found') ||
-         msg.includes('not supported')
+         msg.includes('not supported') ||
+         msg.includes('503') || msg.includes('UNAVAILABLE') || msg.includes('overloaded') ||
+         msg.includes('Service Unavailable') || msg.includes('high demand')
 }
 
 async function callGemini(taskType, contentText, userMessage = '') {
