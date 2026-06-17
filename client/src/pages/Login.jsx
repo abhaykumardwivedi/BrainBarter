@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { RiMailLine, RiLockLine, RiArrowRightLine, RiEyeLine, RiEyeOffLine } from 'react-icons/ri'
 import { Button, Input } from '../components/common'
@@ -12,37 +12,56 @@ export default function Login() {
   const [loading, setLoading] = useState(false)
   const [resetMode, setResetMode] = useState(false)
   const [newPassword, setNewPassword] = useState('')
+  const [resetCode, setResetCode] = useState('')
   const { setUser, setProfile } = useAuthStore()
   const navigate = useNavigate()
 
-  useEffect(() => {
-    const hash = window.location.hash
-    if (hash.includes('type=recovery')) {
-      setResetMode(true)
-    }
-  }, [])
-
   const handle = e => setForm(f => ({ ...f, [e.target.name]: e.target.value }))
 
+  // Step 1: email a reset code (via our SendGrid backend, since Supabase SMTP isn't set up)
   const handleForgotPassword = async () => {
     if (!form.email) return toast.error('Enter your email above first')
-    const { error } = await supabase.auth.resetPasswordForEmail(form.email, {
-      redirectTo: `${window.location.origin}/login`,
-    })
-    if (error) return toast.error(error.message)
-    toast.success('Password reset link sent! Check your email.')
+    setLoading(true)
+    try {
+      const res = await fetch(`${import.meta.env.VITE_API_URL}/api/auth/send-reset-code`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: form.email }),
+      })
+      const body = await res.json().catch(() => ({}))
+      if (!res.ok) throw new Error(body.error || 'Could not send reset code')
+      toast.success('Reset code sent! Check your email.')
+      setResetMode(true)
+    } catch (err) {
+      toast.error(err.message)
+    } finally {
+      setLoading(false)
+    }
   }
 
+  // Step 2: verify the code and set the new password
   const handleResetPassword = async e => {
     e.preventDefault()
+    if (!resetCode.trim()) return toast.error('Enter the code from your email')
     if (newPassword.length < 8) return toast.error('Password must be at least 8 characters')
     setLoading(true)
-    const { error } = await supabase.auth.updateUser({ password: newPassword })
-    setLoading(false)
-    if (error) return toast.error(error.message)
-    toast.success('Password updated! Please sign in.')
-    setResetMode(false)
-    window.history.replaceState(null, '', '/login')
+    try {
+      const res = await fetch(`${import.meta.env.VITE_API_URL}/api/auth/reset-password`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: form.email, code: resetCode, password: newPassword }),
+      })
+      const body = await res.json().catch(() => ({}))
+      if (!res.ok) throw new Error(body.error || 'Could not reset password')
+      toast.success('Password updated! Please sign in.')
+      setResetMode(false)
+      setResetCode('')
+      setNewPassword('')
+    } catch (err) {
+      toast.error(err.message)
+    } finally {
+      setLoading(false)
+    }
   }
 
   const submit = async e => {
@@ -80,10 +99,15 @@ export default function Login() {
           <img src="/logo-mark.svg" alt="BrainBarter"
             className="w-14 h-14 mx-auto mb-3 drop-shadow-[0_0_16px_rgba(157,78,221,0.55)]" />
           <h1 className="text-2xl font-display font-bold text-gray-900 dark:text-white">Set New Password</h1>
-          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Enter a new password for your account</p>
+          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Enter the code sent to {form.email} and a new password</p>
         </div>
         <div className="card">
           <form onSubmit={handleResetPassword} className="space-y-4">
+            <Input
+              label="Reset Code" name="resetCode" placeholder="000000"
+              icon={RiLockLine} value={resetCode} onChange={e => setResetCode(e.target.value)}
+              maxLength={6} required
+            />
             <div className="relative">
               <Input
                 label="New Password" name="newPassword"
@@ -100,6 +124,10 @@ export default function Login() {
             <Button type="submit" loading={loading} className="w-full">
               Update Password <RiArrowRightLine size={16} />
             </Button>
+            <button type="button" onClick={() => { setResetMode(false); setResetCode(''); setNewPassword('') }}
+              className="w-full text-sm text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300">
+              ← Back to sign in
+            </button>
           </form>
         </div>
       </div>
