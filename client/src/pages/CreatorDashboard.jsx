@@ -251,10 +251,10 @@ function ContentRow({ c, ratings, unlockCounts, onTogglePublish, onDelete, onEdi
 
 // ── Main Page ────────────────────────────────────────────────────────────────
 export default function CreatorDashboard() {
-  const { user, profile } = useAuthStore()
+  const { user, profile, loading: authLoading } = useAuthStore()
   const [uploads, setUploads] = useState([])
-  const [ratings, setRatings] = useState({})       // { contentId: avgRating }
-  const [unlockCounts, setUnlockCounts] = useState({}) // { contentId: count }
+  const [ratings, setRatings] = useState({})
+  const [unlockCounts, setUnlockCounts] = useState({})
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
   const [filterType, setFilterType] = useState('all')   // all | video | notes
@@ -264,9 +264,10 @@ export default function CreatorDashboard() {
   const [activeTab, setActiveTab] = useState('content') // content | analytics | earnings
 
   useEffect(() => {
-    if (!user) return
+    if (authLoading) return   // wait for auth to resolve
+    if (!user) { setLoading(false); return }
     loadAll()
-  }, [user])
+  }, [user, authLoading])
 
   const loadAll = async () => {
     setLoading(true)
@@ -282,11 +283,11 @@ export default function CreatorDashboard() {
     if (items.length > 0) {
       const ids = items.map(c => c.id)
 
-      // Load average ratings per content
-      const { data: ratingData } = await supabase
-        .from('ratings')
-        .select('content_id, stars')
-        .in('content_id', ids)
+      // Run ratings + unlocks in parallel
+      const [{ data: ratingData }, { data: unlockData }] = await Promise.all([
+        supabase.from('ratings').select('content_id, stars').in('content_id', ids),
+        supabase.from('unlocks').select('content_id').in('content_id', ids),
+      ])
 
       const ratingMap = {}
       if (ratingData) {
@@ -300,12 +301,6 @@ export default function CreatorDashboard() {
         })
       }
       setRatings(ratingMap)
-
-      // Load unlock counts per content
-      const { data: unlockData } = await supabase
-        .from('unlocks')
-        .select('content_id')
-        .in('content_id', ids)
 
       const unlockMap = {}
       if (unlockData) {

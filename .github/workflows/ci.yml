@@ -1,0 +1,59 @@
+name: CI — protect working features
+
+# Runs on every push and every pull request. If this fails, the change is NOT
+# safe to merge. This is the automatic guardrail so new changes can't silently
+# break working code.
+on:
+  push:
+    branches: ['**']
+  pull_request:
+    branches: ['**']
+
+jobs:
+  smoke-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      # --- Server: install + verify all modules load (catches syntax/import errors) ---
+      - name: Install server deps
+        working-directory: server
+        run: npm ci
+
+      - name: Server contract + logic tests
+        working-directory: server
+        run: npm test
+
+      # --- Client: install + build (catches broken imports / JSX that white-screen the app) ---
+      - name: Install client deps
+        working-directory: client
+        run: npm ci
+
+      - name: Frontend build
+        working-directory: client
+        run: npm run build
+
+      # --- AI features: live check, only if the secret is configured ---
+      - name: AI features (live)
+        working-directory: server
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+        run: |
+          if [ -z "$GEMINI_API_KEY" ]; then
+            echo "⚠️  GEMINI_API_KEY secret not set — skipping live AI check"
+            exit 0
+          fi
+          node -e "
+            const { callGemini } = require('./utils/gemini');
+            const { embedText } = require('./utils/embeddings');
+            (async () => {
+              const s = await callGemini('summarize','The cell is the basic unit of life.');
+              const e = await embedText('test');
+              if (s && s.length>10 && e.length===768) console.log('✅ AI generation + embeddings (768d) work');
+              else { console.error('❌ AI check failed'); process.exit(1); }
+            })().catch(err => { console.error('❌ AI check failed:', err.message); process.exit(1); });
+          "
