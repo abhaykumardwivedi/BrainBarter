@@ -25,4 +25,9 @@ Thumbs.db
 # Logs
 *.log
 npm-debug.log*
+
+# Editor / local tooling
+.vscode/
+.idea/
 .claude/
+.cursor/
