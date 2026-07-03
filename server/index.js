@@ -4,6 +4,7 @@ const cors    = require('cors')
 const aiRoutes = require('./routes/ai')
 const authRoutes = require('./routes/auth')
 const paymentRoutes = require('./routes/payment')
+const studyPlanRoutes = require('./routes/studyPlan')
 
 const app = express()
 
@@ -24,6 +25,9 @@ app.use(cors({
 app.use(express.json())
 
 app.get('/health', (_, res) => res.json({ status: 'ok' }))
+// Study Planner spans /api/ai/study-plan/* and /api/study-plan/* — mount first
+// so those paths resolve before the general /api/ai router.
+app.use('/api', studyPlanRoutes)
 app.use('/api/ai', aiRoutes)
 app.use('/api/auth', authRoutes)
 app.use('/api/payment', paymentRoutes)
