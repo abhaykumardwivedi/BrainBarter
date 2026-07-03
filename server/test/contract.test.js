@@ -41,6 +41,13 @@ test('authController exports all handlers', () => {
   }
 })
 
+test('studyPlanController exports all handlers', () => {
+  const c = require('../controllers/studyPlanController')
+  for (const fn of ['createPlan', 'updateDay', 'getActive', 'getHistory', 'replan']) {
+    assert.strictEqual(typeof c[fn], 'function', `studyPlanController.${fn} must be a function`)
+  }
+})
+
 // --- Payment: lock the token-conversion + minimum rules ---
 test('paymentController exports createOrder + verifyPayment', () => {
   const c = require('../controllers/paymentController')
@@ -66,7 +73,7 @@ test('payment: ₹→token conversion rule (10 tokens per ₹, min ₹10)', () =
 
 // --- Routes wired ---
 test('all route modules load and are express routers', () => {
-  for (const r of ['../routes/ai', '../routes/auth', '../routes/payment']) {
+  for (const r of ['../routes/ai', '../routes/auth', '../routes/payment', '../routes/studyPlan']) {
     const router = require(r)
     assert.strictEqual(typeof router, 'function', `${r} should export a router`)
   }

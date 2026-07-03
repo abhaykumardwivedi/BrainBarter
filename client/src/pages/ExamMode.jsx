@@ -6,6 +6,7 @@ import {
 import { supabase } from '../lib/supabase'
 import useAuthStore from '../store/authStore'
 import toast from 'react-hot-toast'
+import StudyPlanner from '../components/StudyPlanner'
 
 const tabs = [
   { id: 'expected',    label: 'Expected Questions', icon: RiQuestionLine },
@@ -140,6 +141,9 @@ export default function ExamMode() {
           ))}
         </div>
 
+        {/* Study Planner tab is now a full persistent, trackable experience */}
+        {isStudyPlan ? <StudyPlanner /> : (<>
+
         {/* Controls */}
         <div className="rounded-2xl bg-red-950/30 border border-red-900/50 p-6 mb-6">
           {isStudyPlan && (
@@ -227,6 +231,7 @@ export default function ExamMode() {
             }
           />
         </div>
+        </>)}
 
       </div>
     </div>
