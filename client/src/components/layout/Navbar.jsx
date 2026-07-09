@@ -29,6 +29,18 @@ export default function Navbar() {
 
   const isActive = (to) => location.pathname === to
 
+  // On Exam Mode, the whole top bar switches from purple to the cherry theme.
+  const examMode = location.pathname === '/exam-mode'
+  const navClass = examMode
+    ? 'bg-[#14000a]/85 border-exam-900/40'
+    : 'bg-white/80 dark:bg-[#0f0a1e]/80 border-gray-200/60 dark:border-gray-800/60'
+  const activeLink = examMode
+    ? 'bg-exam-950 text-exam-300'
+    : 'bg-brand-50 text-brand-700 dark:bg-brand-950 dark:text-brand-300'
+  const idleLink = examMode
+    ? 'text-red-100/50 hover:bg-exam-950/50 hover:text-exam-200'
+    : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-gray-100'
+
   const handleLogout = async () => {
     await supabase.auth.signOut()
     logout()
@@ -39,16 +51,18 @@ export default function Navbar() {
   }
 
   return (
-    <nav className="sticky top-0 z-40 bg-white/80 dark:bg-[#0f0a1e]/80 backdrop-blur-md border-b border-gray-200/60 dark:border-gray-800/60">
+    <nav className={`sticky top-0 z-40 backdrop-blur-md border-b transition-colors duration-300 ${navClass}`}>
       <div className="container-app">
         <div className="flex items-center justify-between h-16">
 
           {/* Logo */}
           <Link to="/" className="flex items-center gap-2.5 group">
             <img src="/logo-mark.svg" alt="BrainBarter"
-              className="w-9 h-9 drop-shadow-[0_0_10px_rgba(157,78,221,0.5)] group-hover:drop-shadow-[0_0_16px_rgba(157,78,221,0.7)] transition-all" />
-            <span className="font-display font-bold text-lg text-gray-900 dark:text-white">
-              Brain<span className="text-brand-500">Barter</span>
+              className={`w-9 h-9 transition-all ${examMode
+                ? 'drop-shadow-[0_0_10px_rgba(209,10,55,0.6)] group-hover:drop-shadow-[0_0_16px_rgba(209,10,55,0.8)]'
+                : 'drop-shadow-[0_0_10px_rgba(157,78,221,0.5)] group-hover:drop-shadow-[0_0_16px_rgba(157,78,221,0.7)]'}`} />
+            <span className={`font-display font-bold text-lg ${examMode ? 'text-white' : 'text-gray-900 dark:text-white'}`}>
+              Brain<span className={examMode ? 'text-exam-500' : 'text-brand-500'}>Barter</span>
             </span>
           </Link>
 
@@ -58,10 +72,7 @@ export default function Navbar() {
               <Link
                 key={to} to={to}
                 className={`flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-sm font-medium transition-all duration-200
-                  ${isActive(to)
-                    ? 'bg-brand-50 text-brand-700 dark:bg-brand-950 dark:text-brand-300'
-                    : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-gray-100'
-                  }`}
+                  ${isActive(to) ? activeLink : idleLink}`}
               >
                 <Icon size={16} />
                 {label}
@@ -145,12 +156,12 @@ export default function Navbar() {
 
       {/* Mobile Menu */}
       {mobileOpen && (
-        <div className="md:hidden border-t border-gray-200 dark:border-gray-800 bg-white dark:bg-[#0f0a1e] animate-slide-down">
+        <div className={`md:hidden border-t animate-slide-down ${examMode ? 'border-exam-900/40 bg-[#14000a]' : 'border-gray-200 dark:border-gray-800 bg-white dark:bg-[#0f0a1e]'}`}>
           <div className="container-app py-3 space-y-1">
             {navLinks.map(({ to, label, icon: Icon }) => (
               <Link key={to} to={to} onClick={() => setMobileOpen(false)}
                 className={`flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-medium transition-all
-                  ${isActive(to) ? 'bg-brand-50 text-brand-700 dark:bg-brand-950 dark:text-brand-300' : 'text-gray-600 dark:text-gray-400'}`}>
+                  ${isActive(to) ? activeLink : idleLink}`}>
                 <Icon size={16} /> {label}
               </Link>
             ))}

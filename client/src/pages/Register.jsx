@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { RiMailLine, RiLockLine, RiUserLine, RiArrowRightLine, RiShieldCheckLine } from 'react-icons/ri'
-import { Button, Input } from '../components/common'
+import { Button, Input, GoogleButton } from '../components/common'
 import { supabase } from '../lib/supabase'
 import useAuthStore from '../store/authStore'
 import toast from 'react-hot-toast'
@@ -183,6 +183,14 @@ export default function Register() {
                   Send Verification Code <RiArrowRightLine size={16} />
                 </Button>
               </form>
+
+              <div className="flex items-center gap-3 my-5">
+                <div className="flex-1 h-px bg-gray-200 dark:bg-gray-800" />
+                <span className="text-xs text-gray-400">or</span>
+                <div className="flex-1 h-px bg-gray-200 dark:bg-gray-800" />
+              </div>
+
+              <GoogleButton label="Sign up with Google" />
             </>
           ) : (
             <>
