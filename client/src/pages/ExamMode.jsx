@@ -98,7 +98,7 @@ export default function ExamMode() {
   const isStudyPlan = activeTab === 'study-plan'
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-[#2a0000] via-[#1a0000] to-[#0d0000]">
+    <div className="min-h-screen bg-gradient-to-b from-[#2a0010] via-[#18000a] to-[#0c0005]">
       <div className="container-app py-8 max-w-4xl">
 
         {/* Header */}
