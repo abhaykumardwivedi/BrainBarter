@@ -7,11 +7,12 @@ import {
 import { Button, Badge, TokenChip } from '../components/common'
 import useAuthStore from '../store/authStore'
 
-const stats = [
-  { label: 'Active Learners', value: '2,400+' },
-  { label: 'Topics Covered',  value: '380+'   },
-  { label: 'Peer Creators',   value: '140+'   },
-  { label: 'Tokens Exchanged',value: '18K+'   },
+// Honest capability pills (no fabricated user metrics)
+const highlights = [
+  { icon: RiFlashlightLine,  text: 'AI revision & mock exams' },
+  { icon: RiGroupLine,       text: 'Notes by real students' },
+  { icon: RiShieldCheckLine, text: 'Secure payments' },
+  { icon: RiStarLine,        text: '50 free tokens on signup' },
 ]
 
 const features = [
@@ -85,13 +86,14 @@ export default function Home() {
             </Link>
           </div>
 
-          {/* Stats */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mt-16 max-w-2xl mx-auto">
-            {stats.map(({ label, value }) => (
-              <div key={label} className="card-inset text-center py-4">
-                <p className="text-2xl font-display font-bold text-brand-700 dark:text-brand-300">{value}</p>
-                <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">{label}</p>
-              </div>
+          {/* Capability pills */}
+          <div className="flex flex-wrap items-center justify-center gap-3 mt-14 max-w-2xl mx-auto">
+            {highlights.map(({ icon: Icon, text }) => (
+              <span key={text}
+                className="inline-flex items-center gap-2 px-4 py-2 rounded-full card-inset text-sm text-gray-600 dark:text-gray-300">
+                <Icon size={15} className="text-brand-500 dark:text-brand-400" />
+                {text}
+              </span>
             ))}
           </div>
         </div>
