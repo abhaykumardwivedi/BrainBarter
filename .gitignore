@@ -29,5 +29,3 @@ npm-debug.log*
 # Editor / local tooling
 .vscode/
 .idea/
-.claude/
-.cursor/
